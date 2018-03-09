@@ -1,0 +1,3 @@
+[submodule "nitools/bidsconverter"]
+	path = nitools/bidsconverter
+	url = git@github.com:lukassnoek/BidsConverter.git
