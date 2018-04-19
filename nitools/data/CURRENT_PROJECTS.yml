@@ -1,0 +1,34 @@
+SpinozaTest:
+
+    export_folder: fMRI Project SpinozaCenter
+    preproc: True
+    qc: True
+    multiple_sessions: True
+
+    fmriprep_options:
+        # args excluded: participant_label, task_id
+        anat-only: False
+        freesurfer: False  # options: [True, False]
+        ignore: slicetiming  # options: [fieldmaps, slicetiming]
+        bold2t1w-dof: 9  # options: [6, 9, 12]
+        output-space: template  # options: [MNI, T1w, fsnative, fsaverage]
+        use-aroma: False  # options: [True, False]
+
+########
+# Should freesurfer 'recon-all' be run? (Only do this when you're actually
+# planning to use freesurfer output, because this is very resource-intensive!
+#freesurfer: False  # options: [True, False]
+#
+# What should NOT be done?
+#ignore: slicetiming  # options: [fieldmaps, slicetiming]
+#
+# How many degrees of freedom should be in bold-to-T1 coregistration (BBR-based)?
+#bold2t1w-dof: 9  # options: [6, 9, 12]
+#
+# In what space should the preprocessed BOLD-data be resampled?
+#output-space: MNI  # options: [MNI, T1w, fsnative, fsaverage]
+#
+# Run ICA-AROMA? (Only do this when you actually are going to use this output,
+# because it's very resource-intensive!)
+#use-aroma: False  # options: [True, False]
+########

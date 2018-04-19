@@ -1,0 +1,2 @@
+# If installing on system, place under /var/spool/cron/crontabs/$username
+0 23 * * * run_qc_and_preproc

@@ -9,7 +9,7 @@ with open(ver_file) as f:
     exec(f.read())
 
 # Long description will go up on the pypi page
-with open('README.rst') as f:
+with open('README.md') as f:
     LONG_DESCRIPTION = f.read()
 
 with open('requirements.txt') as f:
@@ -33,9 +33,9 @@ opts = dict(name=NAME,
             install_requires=REQUIRES,
             requires=REQUIRES,
             entry_points={
-                #'console_scripts': [
-                #    'bidsify = bidsconverter.bidsconverter:main',
-                #    ]
+                'console_scripts': [
+                    'run_qc_and_preproc = nitools.cmd_tools:run_qc_and_preproc'
+                    ]
                 }
             )
 
