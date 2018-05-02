@@ -56,17 +56,19 @@ def run_preproc(bids_dir, **fmriprep_options):
 
     out_dir = op.join(op.dirname(bids_dir), 'preproc')
     fmriprep_dir = op.join(out_dir, 'fmriprep')
-    subs_done = [s.split('.html')[0] for s in sorted(glob(op.join(fmriprep_dir, '*html')))]
-    bids_subs = sorted(glob(op.join(bids_dir, 'sub*')))
-    participant_label = [sub.split('-')[1] for sub in bids_subs if sub not in subs_done]
+    subs_done = [op.basename(s).split('.html')[0]
+                 for s in sorted(glob(op.join(fmriprep_dir, '*html')))]
+    bids_subs = [op.basename(f) for f in sorted(glob(op.join(bids_dir, 'sub*')))]
+    participant_labels = [sub.split('-')[1] for sub in bids_subs if sub not in subs_done]
 
     fmriprep_options = {('--' + key): value for key, value in fmriprep_options.items()}
     default_args.update(fmriprep_options)
     fmriprep_options = {key: value for key, value in default_args.items() if value}
     options_str = [key + ' ' + str(value) for key, value in fmriprep_options.items()]
     cmd = f'fmriprep-docker {bids_dir} {out_dir} ' + ' '.join(options_str).replace(' True', '')
-    print(cmd)
+    cmd += ' --participant_label %s' % ' '.join(participant_labels)
     os.system(cmd)
+
 
 
 if __name__ == '__main__':
@@ -75,4 +77,5 @@ if __name__ == '__main__':
     with open(cp_file, 'r') as cpf:
         curr_projects = yaml.load(cpf)
 
-    run_preproc('/Users/lukas/spinoza_data/SpinozaTest/bids', **curr_projects['SpinozaTest']['fmriprep_options'])
+    #run_preproc('/Users/lukas/spinoza_data/SpinozaTest/bids', **curr_projects['SpinozaTest']['fmriprep_options'])
+    run_preproc('/media/lukas/data/spinoza-rec/spinoza_testdata/SpinozaTest/bids', **curr_projects['SpinozaTest']['fmriprep_options'])
