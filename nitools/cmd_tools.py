@@ -13,12 +13,12 @@ from .qc import run_qc
 env_vars = {
     'uva': dict(
         server_home='/media/lukas/goliath/spinoza_data',
-        fmri_proj='/run/user/1000/gvfs/smb-share:server=fmgstorage.fmg.uva.nl,share=psychology$fMRI Projects',
+        fmri_proj='/run/user/1000/gvfs/smb-share:server=fmgstorage.fmg.uva.nl,share=psychology$/fMRI Projects',
         dropbox='/run/user/1000/gvfs/smb-share:server=fmgstorage.fmg.uva.nl,share=dropbox$'
     ),
     'neuroimaging.lukas-snoek.com': dict(
-        server_home='/media/lukas/goliath/spinoza_data',
-        fmri_proj='/run/user/1002/gvfs/smb-share:server=fmgstorage.fmg.uva.nl,share=psychology$fMRI Projects',
+        server_home='/home/lsnoek1/spinoza_data',
+        fmri_proj='/run/user/1002/gvfs/smb-share:server=fmgstorage.fmg.uva.nl,share=psychology$/fMRI Projects',
         dropbox='/run/user/1002/gvfs/smb-share:server=fmgstorage.fmg.uva.nl,share=dropbox$'
     ),
     'MacBook': dict(
@@ -46,7 +46,7 @@ def run_qc_and_preproc():
 
     # Loop over projects
     for proj_name, settings in curr_projects.items():
-        print("Fetching data from %s" % proj_name)
+        print("Looking for data in %s" % proj_name)
 
         export_folder = settings['export_folder']
         if 'fMRI Project' in export_folder:
@@ -79,17 +79,20 @@ def run_qc_and_preproc():
                 server_dir = op.join(proj_dir, 'raw', sub_idf)
 
             if not op.isdir(server_dir):
+                print("Copying data from %s to server ... " % sub, end='')
                 shutil.copytree(sub, server_dir)
+                print("done.")
             else:
                 print("This data is already on server")
 
         # Then bidsify everything
+        print("Running bidsify ...")
         spinoza_cfg = op.join(op.dirname(bidsify.__file__), 'data', 'spinoza_cfg.yml')
         run_bidsify(cfg_path=spinoza_cfg, directory=op.join(proj_dir, 'raw'), validate=True)
 
-        if settings['qc']:
-            run_qc(directory=op.join(proj_dir, 'bids'))
-
         if settings['preproc']:
-            run_preproc(directory=op.join(proj_dir, 'bids'),
+            run_preproc(bids_dir=op.join(proj_dir, 'bids'),
                         **settings['fmriprep_options'])
+
+        if settings['qc']:
+            run_qc(bids_dir=op.join(proj_dir, 'bids'))
