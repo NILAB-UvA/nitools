@@ -9,36 +9,28 @@ from bidsify import bidsify as run_bidsify
 from .preproc import run_preproc
 from .qc import run_qc
 
-TEST = True
 
 env_vars = {
     'uva': dict(
         server_home='/media/lukas/goliath/spinoza_data',
-        fmri_proj='/run/user/1000/gvfs/smb-share:server=bigbrother.fmg.uva.nl,share=fmri_projects$',
-        dropbox='/run/user/1000/gvfs/smb-share:server=bigbrother.fmg.uva.nl,share=dropbox$'
+        fmri_proj='/run/user/1000/gvfs/smb-share:server=fmgstorage.fmg.uva.nl,share=fmri_projects$',
+        dropbox='/run/user/1000/gvfs/smb-share:server=fmgstorage.fmg.uva.nl,share=dropbox$'
     ),
     'neuroimaging.lukas-snoek.com': dict(
         server_home='/media/lukas/goliath/spinoza_data',
-        fmri_proj='/run/user/1002/gvfs/smb-share:server=bigbrother.fmg.uva.nl,share=fmri_projects$',
-        dropbox='/run/user/1002/gvfs/smb-share:server=bigbrother.fmg.uva.nl,share=dropbox$'
+        fmri_proj='/run/user/1002/gvfs/smb-share:server=fmgstorage.fmg.uva.nl,share=fmri_projects$',
+        dropbox='/run/user/1002/gvfs/smb-share:server=fmgstorage.fmg.uva.nl,share=dropbox$'
     ),
     'MacBook': dict(
         server_home='/Users/lukas/spinoza_data',
         fmri_proj='/Volumes/fMRI_projects$',
         dropbox='/Volumes/dropbox$'
-    ),
-    'TEST': dict(
-        server_home='/Users/lukas/spinoza_data',
-        fmri_proj='/Users/lukas/spinoza_data/mock_fmri_proj',
-        dropbox='/Users/lukas/spinoza_data/mock_dropbox'
     )
 }
 
 hostname = socket.gethostname()
 if 'MacBook' in hostname or 'vpn' in hostname:
     hostname = 'MacBook'
-elif TEST:
-    hostname = 'TEST'
 
 env = env_vars[hostname]
 
