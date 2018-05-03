@@ -14,11 +14,15 @@ SpinozaTest:
         output-space: template  # options: [MNI, T1w, fsnative, fsaverage]
         use-aroma: False  # options: [True, False]
         use-syn-sdc: False
+        nthreads: 1
+        omp-nthreads: 1
 
     mriqc_options:
         fd_thres: 0.2
         correct-slice-timing: False
         verbose-reports: False
+        omp-nthreads: 1
+        nthreads: 1
 
 ########
 # Should freesurfer 'recon-all' be run? (Only do this when you're actually

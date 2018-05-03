@@ -85,14 +85,26 @@ def run_qc_and_preproc():
             else:
                 print("This data is already on server")
 
+	# Also check for config.yml
+        cfg_file = op.join(export_folder, 'raw', 'config.yml')
+        if op.isfile(cfg_file):
+            print("Copying config file to server ...")
+            shutil.copy2(cfg_file, op.join(proj_dir, 'raw'))
+            cfg_file = op.join(proj_dir, 'raw', 'config.yml')
+
         # Then bidsify everything
         print("Running bidsify ...")
-        spinoza_cfg = op.join(op.dirname(bidsify.__file__), 'data', 'spinoza_cfg.yml')
-        run_bidsify(cfg_path=spinoza_cfg, directory=op.join(proj_dir, 'raw'), validate=True)
+        if op.isfile(cfg_file):
+            this_cfg = cfg_file
+        else:
+            this_cfg = op.join(op.dirname(bidsify.__file__), 'data', 'spinoza_cfg.yml')
+        
+        run_bidsify(cfg_path=this_cfg, directory=op.join(proj_dir, 'raw'), validate=True)
 
         if settings['preproc']:
-            run_preproc(bids_dir=op.join(proj_dir, 'bids'),
+            run_preproc(bids_dir=op.join(proj_dir, 'bids'), export_dir=export_folder,
                         **settings['fmriprep_options'])
 
         if settings['qc']:
-            run_qc(bids_dir=op.join(proj_dir, 'bids'))
+            run_qc(bids_dir=op.join(proj_dir, 'bids'), export_dir=export_folder,
+                   **settings['mriqc_options'])

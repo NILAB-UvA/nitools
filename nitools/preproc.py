@@ -1,6 +1,8 @@
 import os
 import os.path as op
 from glob import glob
+import shutil
+
 
 default_args = {
     '--debug': False,
@@ -40,13 +42,16 @@ default_args = {
 }
 
 
-def run_preproc(bids_dir, **fmriprep_options):
+def run_preproc(bids_dir, export_dir=None, **fmriprep_options):
     """ Runs data from BIDS-directory through fmriprep pipeline.
 
     Parameters
     ----------
     bids_dir: str
         Absolute path to BIDS-directory
+    export_dir : str or None
+	If string, it points to a path to copy the data to. If None,
+        this is ignored
     subs: list of str
         List of subject-identifiers (e.g., sub-0001) which need to be run
         through the pipeline
@@ -67,15 +72,22 @@ def run_preproc(bids_dir, **fmriprep_options):
     options_str = [key + ' ' + str(value) for key, value in fmriprep_options.items()]
     cmd = f'fmriprep-docker {bids_dir} {out_dir} ' + ' '.join(options_str).replace(' True', '')
     cmd += ' --participant_label %s' % ' '.join(participant_labels)
-    os.system(cmd)
+    #os.system(cmd)
+
+    if export_dir is not None:
+        copy_dir = op.join(export_dir, 'preproc')
+        if not op.isdir(copy_dir):
+            os.makedirs(copy_dir)
+        
+        proc_sub_data = sorted(glob(op.join(fmriprep_dir, 'sub-*')))
+        done_sub_data = [op.basename(f) for f in sorted(glob(op.join(copy_dir, 'sub-*')))]
+        
+        for f in proc_sub_data:
+            if op.basename(f) not in done_sub_data:
+                if op.isdir(f):
+                    shutil.copytree(f, op.join(copy_dir, op.basename(f)))
+                else:
+                    shutil.copyfile(f, op.join(copy_dir, op.basename(f)))
 
 
 
-if __name__ == '__main__':
-    import yaml
-    cp_file = op.join(op.dirname(__file__), 'data', 'CURRENT_PROJECTS.yml')
-    with open(cp_file, 'r') as cpf:
-        curr_projects = yaml.load(cpf)
-
-    #run_preproc('/Users/lukas/spinoza_data/SpinozaTest/bids', **curr_projects['SpinozaTest']['fmriprep_options'])
-    run_preproc('/media/lukas/data/spinoza-rec/spinoza_testdata/SpinozaTest/bids', **curr_projects['SpinozaTest']['fmriprep_options'])
