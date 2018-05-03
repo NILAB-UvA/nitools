@@ -102,9 +102,11 @@ def run_qc_and_preproc():
         run_bidsify(cfg_path=this_cfg, directory=op.join(proj_dir, 'raw'), validate=True)
 
         if settings['preproc']:
+            print("Running fmriprep ...")
             run_preproc(bids_dir=op.join(proj_dir, 'bids'), export_dir=export_folder,
                         **settings['fmriprep_options'])
 
         if settings['qc']:
+            print("Running mriqc ...")
             run_qc(bids_dir=op.join(proj_dir, 'bids'), export_dir=export_folder,
                    **settings['mriqc_options'])

@@ -21,8 +21,8 @@ SpinozaTest:
         fd_thres: 0.2
         correct-slice-timing: False
         verbose-reports: False
-        omp-nthreads: 1
-        nthreads: 1
+        ants-nthreads: 1
+        n_procs: 1
 
 ########
 # Should freesurfer 'recon-all' be run? (Only do this when you're actually
