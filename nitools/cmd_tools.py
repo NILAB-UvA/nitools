@@ -13,12 +13,12 @@ from .qc import run_qc
 env_vars = {
     'uva': dict(
         server_home='/media/lukas/goliath/spinoza_data',
-        fmri_proj='/run/user/1000/gvfs/smb-share:server=fmgstorage.fmg.uva.nl,share=fmri_projects$',
+        fmri_proj='/run/user/1000/gvfs/smb-share:server=fmgstorage.fmg.uva.nl,share=psychology$fMRI Projects',
         dropbox='/run/user/1000/gvfs/smb-share:server=fmgstorage.fmg.uva.nl,share=dropbox$'
     ),
     'neuroimaging.lukas-snoek.com': dict(
         server_home='/media/lukas/goliath/spinoza_data',
-        fmri_proj='/run/user/1002/gvfs/smb-share:server=fmgstorage.fmg.uva.nl,share=fmri_projects$',
+        fmri_proj='/run/user/1002/gvfs/smb-share:server=fmgstorage.fmg.uva.nl,share=psychology$fMRI Projects',
         dropbox='/run/user/1002/gvfs/smb-share:server=fmgstorage.fmg.uva.nl,share=dropbox$'
     ),
     'MacBook': dict(
