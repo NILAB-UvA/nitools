@@ -18,7 +18,7 @@ env_vars = {
     ),
     'neuroimaging.lukas-snoek.com': dict(
         server_home='/home/lsnoek1/spinoza_data',
-        fmri_proj='/run/user/1002/gvfs/smb-share:server=fmgstorage.fmg.uva.nl,share=psychology$/fMRI Projects',
+        fmri_proj='/home/lsnoek1/fmgstorage_share/fMRI Projects',
         dropbox='/run/user/1002/gvfs/smb-share:server=fmgstorage.fmg.uva.nl,share=dropbox$'
     ),
     'MacBook': dict(

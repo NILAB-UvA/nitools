@@ -72,7 +72,9 @@ def run_preproc(bids_dir, export_dir=None, **fmriprep_options):
     options_str = [key + ' ' + str(value) for key, value in fmriprep_options.items()]
     cmd = f'fmriprep-docker {bids_dir} {out_dir} ' + ' '.join(options_str).replace(' True', '')
     cmd += ' --participant_label %s' % ' '.join(participant_labels)
-    os.system(cmd)
+
+    if participant_labels:
+        os.system(cmd)
 
     if export_dir is not None:
         copy_dir = op.join(export_dir, 'preproc')
