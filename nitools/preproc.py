@@ -50,7 +50,7 @@ def run_preproc(bids_dir, export_dir=None, **fmriprep_options):
     bids_dir: str
         Absolute path to BIDS-directory
     export_dir : str or None
-	If string, it points to a path to copy the data to. If None,
+        If string, it points to a path to copy the data to. If None,
         this is ignored
     subs: list of str
         List of subject-identifiers (e.g., sub-0001) which need to be run
@@ -59,37 +59,46 @@ def run_preproc(bids_dir, export_dir=None, **fmriprep_options):
         Keyword arguments of fmriprep-options
     """
 
-    out_dir = op.join(op.dirname(bids_dir), 'preproc')
-    fmriprep_dir = op.join(out_dir, 'fmriprep')
+    # Define directories + find subjects
+    preproc_dir = op.join(op.dirname(bids_dir), 'preproc')
+    fmriprep_dir = op.join(preproc_dir, 'fmriprep')
     subs_done = [op.basename(s).split('.html')[0]
                  for s in sorted(glob(op.join(fmriprep_dir, '*html')))]
     bids_subs = [op.basename(f) for f in sorted(glob(op.join(bids_dir, 'sub*')))]
-    participant_labels = [sub.split('-')[1] for sub in bids_subs if sub not in subs_done]
 
+    # Define subjects which need to be preprocessed
+    participant_labels = [sub.split('-')[1] for sub in bids_subs
+                          if sub not in subs_done]
+
+    # Merge default arguments and desided arguments from user (which will)
+    # overwrite default arguments
     fmriprep_options = {('--' + key): value for key, value in fmriprep_options.items()}
     default_args.update(fmriprep_options)
-    fmriprep_options = {key: value for key, value in default_args.items() if value}
-    options_str = [key + ' ' + str(value) for key, value in fmriprep_options.items()]
-    cmd = f'fmriprep-docker {bids_dir} {out_dir} ' + ' '.join(options_str).replace(' True', '')
+    all_fmriprep_options = {key: value for key, value in default_args.items() if value}
+    options_str = [key + ' ' + str(value) for key, value in all_fmriprep_options.items()]
+
+    # Construct command
+    cmd = f'fmriprep-docker {bids_dir} {preproc_dir} ' + ' '.join(options_str).replace(' True', '')
     cmd += ' --participant_label %s' % ' '.join(participant_labels)
 
+    # Only run if there are actually participants to be processed
     if participant_labels:
+        print("Running participants: %s ..." % ' '.join(participant_labels))
         os.system(cmd)
 
+    # If an export-dir is defined, copy stuff to export-dir (if None, nothing
+    # is copied)
     if export_dir is not None:
         copy_dir = op.join(export_dir, 'preproc')
         if not op.isdir(copy_dir):
             os.makedirs(copy_dir)
-        
+
         proc_sub_data = sorted(glob(op.join(fmriprep_dir, 'sub-*')))
         done_sub_data = [op.basename(f) for f in sorted(glob(op.join(copy_dir, 'sub-*')))]
-        
+
         for f in proc_sub_data:
             if op.basename(f) not in done_sub_data:
                 if op.isdir(f):
                     shutil.copytree(f, op.join(copy_dir, op.basename(f)))
                 else:
                     shutil.copyfile(f, op.join(copy_dir, op.basename(f)))
-
-
-

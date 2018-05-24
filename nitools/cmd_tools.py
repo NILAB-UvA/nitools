@@ -9,17 +9,17 @@ from bidsify import bidsify as run_bidsify
 from .preproc import run_preproc
 from .qc import run_qc
 
-
+# Define some "environment-variables"
 env_vars = {
     'uva': dict(
         server_home='/media/lukas/goliath/spinoza_data',
         fmri_proj='/run/user/1000/gvfs/smb-share:server=fmgstorage.fmg.uva.nl,share=psychology$/fMRI Projects',
-        dropbox='/run/user/1000/gvfs/smb-share:server=fmgstorage.fmg.uva.nl,share=dropbox$'
+        dropbox='/run/user/1000/gvfs/smb-share:server=bigbrother.fmg.uva.nl,share=dropbox$'
     ),
     'neuroimaging.lukas-snoek.com': dict(
         server_home='/home/lsnoek1/spinoza_data',
         fmri_proj='/home/lsnoek1/fmgstorage_share/fMRI Projects',
-        dropbox='/run/user/1002/gvfs/smb-share:server=fmgstorage.fmg.uva.nl,share=dropbox$'
+        dropbox='/home/lsnoek1/dropbox_share$'
     ),
     'MacBook': dict(
         server_home='/Users/lukas/spinoza_data',
@@ -28,6 +28,7 @@ env_vars = {
     )
 }
 
+# Check on which platform this is running (work desktop, pers. laptop, server)
 hostname = socket.gethostname()
 if 'MacBook' in hostname or 'vpn' in hostname:
     hostname = 'MacBook'
@@ -39,14 +40,14 @@ def run_qc_and_preproc():
     """ Main function to run qc and preprocessing of Spinoza Centre (REC)
     data. """
 
-    # Open file with current-projects
+    # Open file with currently running projects
     cp_file = op.join(op.dirname(__file__), 'data', 'CURRENT_PROJECTS.yml')
     with open(cp_file, 'r') as cpf:
         curr_projects = yaml.load(cpf)
 
     # Loop over projects
     for proj_name, settings in curr_projects.items():
-        print("========== PROCESSING DATA FROM PROJECT %s ==========" % proj_name)
+        print("======== PROCESSING DATA FROM PROJECT %s ========" % proj_name)
 
         export_folder = settings['export_folder']
         if 'fMRI Project' in export_folder:
@@ -91,20 +92,23 @@ def run_qc_and_preproc():
             cfg_file = op.join(proj_dir, 'raw', 'config.yml')
 
         # Then bidsify everything
-        print("Running bidsify ...")
+        print("\n-------- RUNNING BIDSIFY --------")
         if op.isfile(cfg_file):
             this_cfg = cfg_file
         else:
-            this_cfg = op.join(op.dirname(bidsify.__file__), 'data', 'spinoza_cfg.yml')
+            this_cfg = op.join(op.dirname(bidsify.__file__), 'data',
+                               'spinoza_cfg.yml')
 
-        run_bidsify(cfg_path=this_cfg, directory=op.join(proj_dir, 'raw'), validate=True)
+        run_bidsify(cfg_path=this_cfg, directory=op.join(proj_dir, 'raw'),
+                    validate=True)
 
         if settings['preproc']:
-            print("Running fmriprep ...")
-            run_preproc(bids_dir=op.join(proj_dir, 'bids'), export_dir=export_folder,
+            print("\n-------- RUNNING FMRIPREP --------")
+            run_preproc(bids_dir=op.join(proj_dir, 'bids'),
+                        export_dir=export_folder,
                         **settings['fmriprep_options'])
 
         if settings['qc']:
-            print("Running mriqc ...")
-            run_qc(bids_dir=op.join(proj_dir, 'bids'), export_dir=export_folder,
-                   **settings['mriqc_options'])
+            print("\n-------- RUNNING MRIQC --------")
+            run_qc(bids_dir=op.join(proj_dir, 'bids'),
+                   export_dir=export_folder, **settings['mriqc_options'])
