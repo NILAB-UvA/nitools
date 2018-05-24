@@ -12,6 +12,7 @@ SpinozaTest:
         ignore: slicetiming  # options: [fieldmaps, slicetiming]
         bold2t1w-dof: 9  # options: [6, 9, 12]
         output-space: template  # options: [MNI, T1w, fsnative, fsaverage]
+        template-resampling-grid: native  # options: [1mm, 2mm]
         use-aroma: False  # options: [True, False]
         use-syn-sdc: False
         nthreads: 1
