@@ -9,36 +9,28 @@ from bidsify import bidsify as run_bidsify
 from .preproc import run_preproc
 from .qc import run_qc
 
-TEST = True
 
 env_vars = {
     'uva': dict(
         server_home='/media/lukas/goliath/spinoza_data',
-        fmri_proj='/run/user/1000/gvfs/smb-share:server=bigbrother.fmg.uva.nl,share=fmri_projects$',
-        dropbox='/run/user/1000/gvfs/smb-share:server=bigbrother.fmg.uva.nl,share=dropbox$'
+        fmri_proj='/run/user/1000/gvfs/smb-share:server=fmgstorage.fmg.uva.nl,share=psychology$/fMRI Projects',
+        dropbox='/run/user/1000/gvfs/smb-share:server=fmgstorage.fmg.uva.nl,share=dropbox$'
     ),
     'neuroimaging.lukas-snoek.com': dict(
-        server_home='/media/lukas/goliath/spinoza_data',
-        fmri_proj='/run/user/1002/gvfs/smb-share:server=bigbrother.fmg.uva.nl,share=fmri_projects$',
-        dropbox='/run/user/1002/gvfs/smb-share:server=bigbrother.fmg.uva.nl,share=dropbox$'
+        server_home='/home/lsnoek1/spinoza_data',
+        fmri_proj='/home/lsnoek1/fmgstorage_share/fMRI Projects',
+        dropbox='/run/user/1002/gvfs/smb-share:server=fmgstorage.fmg.uva.nl,share=dropbox$'
     ),
     'MacBook': dict(
         server_home='/Users/lukas/spinoza_data',
         fmri_proj='/Volumes/fMRI_projects$',
         dropbox='/Volumes/dropbox$'
-    ),
-    'TEST': dict(
-        server_home='/Users/lukas/spinoza_data',
-        fmri_proj='/Users/lukas/spinoza_data/mock_fmri_proj',
-        dropbox='/Users/lukas/spinoza_data/mock_dropbox'
     )
 }
 
 hostname = socket.gethostname()
 if 'MacBook' in hostname or 'vpn' in hostname:
     hostname = 'MacBook'
-elif TEST:
-    hostname = 'TEST'
 
 env = env_vars[hostname]
 
@@ -87,16 +79,32 @@ def run_qc_and_preproc():
             if not op.isdir(server_dir):
                 print("Copying data from %s to server ..." % sub_idf)
                 shutil.copytree(sub, server_dir)
+                print("done.")
             else:
                 print("Data from %s is already on server!" % sub_idf)
 
-        # Then bidsify everything
-        spinoza_cfg = op.join(op.dirname(bidsify.__file__), 'data', 'spinoza_cfg.yml')
-        run_bidsify(cfg_path=spinoza_cfg, directory=op.join(proj_dir, 'raw'), validate=True)
+        # Also check for config.yml
+        cfg_file = op.join(export_folder, 'raw', 'config.yml')
+        if op.isfile(cfg_file):
+            print("Copying config file to server ...")
+            shutil.copy2(cfg_file, op.join(proj_dir, 'raw'))
+            cfg_file = op.join(proj_dir, 'raw', 'config.yml')
 
-        if settings['qc']:
-            run_qc(directory=op.join(proj_dir, 'bids'))
+        # Then bidsify everything
+        print("Running bidsify ...")
+        if op.isfile(cfg_file):
+            this_cfg = cfg_file
+        else:
+            this_cfg = op.join(op.dirname(bidsify.__file__), 'data', 'spinoza_cfg.yml')
+
+        run_bidsify(cfg_path=this_cfg, directory=op.join(proj_dir, 'raw'), validate=True)
 
         if settings['preproc']:
-            run_preproc(directory=op.join(proj_dir, 'bids'),
+            print("Running fmriprep ...")
+            run_preproc(bids_dir=op.join(proj_dir, 'bids'), export_dir=export_folder,
                         **settings['fmriprep_options'])
+
+        if settings['qc']:
+            print("Running mriqc ...")
+            run_qc(bids_dir=op.join(proj_dir, 'bids'), export_dir=export_folder,
+                   **settings['mriqc_options'])

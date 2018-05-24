@@ -3,16 +3,27 @@ SpinozaTest:
     export_folder: fMRI Project SpinozaCenter
     preproc: True
     qc: True
-    multiple_sessions: True
+    multiple_sessions: False
 
     fmriprep_options:
         # args excluded: participant_label, task_id
         anat-only: False
-        freesurfer: False  # options: [True, False]
+        fs-no-reconall: False  # options: [True, False]
         ignore: slicetiming  # options: [fieldmaps, slicetiming]
         bold2t1w-dof: 9  # options: [6, 9, 12]
         output-space: template  # options: [MNI, T1w, fsnative, fsaverage]
+        template-resampling-grid: native  # options: [1mm, 2mm]
         use-aroma: False  # options: [True, False]
+        use-syn-sdc: False
+        nthreads: 1
+        omp-nthreads: 1
+
+    mriqc_options:
+        fd_thres: 0.2
+        correct-slice-timing: False
+        verbose-reports: False
+        ants-nthreads: 1
+        n_procs: 1
 
 ########
 # Should freesurfer 'recon-all' be run? (Only do this when you're actually
