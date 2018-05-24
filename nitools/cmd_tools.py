@@ -54,7 +54,7 @@ def run_qc_and_preproc():
 
     # Loop over projects
     for proj_name, settings in curr_projects.items():
-        print("Fetching data from %s" % proj_name)
+        print("========== PROCESSING DATA FROM PROJECT %s ==========" % proj_name)
 
         export_folder = settings['export_folder']
         if 'fMRI Project' in export_folder:
@@ -71,10 +71,8 @@ def run_qc_and_preproc():
         if settings['multiple_sessions']:
             search_str = op.join(export_folder, 'raw', 'sub-*', 'ses-*')
             subs_in_raw = sorted(glob(search_str))
-            print("subjects in raw: %s" % ([f.split('/')[-2:] for f in subs_in_raw],))
         else:
             subs_in_raw = sorted(glob(op.join(export_folder, 'raw', 'sub-*')))
-            print("subjects in raw: %s" % ([op.basename(f) for f in subs_in_raw],))
 
         for sub in subs_in_raw:  # First copy data to server (if necessary)
 
@@ -87,9 +85,10 @@ def run_qc_and_preproc():
                 server_dir = op.join(proj_dir, 'raw', sub_idf)
 
             if not op.isdir(server_dir):
+                print("Copying data from %s to server ..." % sub_idf)
                 shutil.copytree(sub, server_dir)
             else:
-                print("This data is already on server")
+                print("Data from %s is already on server!" % sub_idf)
 
         # Then bidsify everything
         spinoza_cfg = op.join(op.dirname(bidsify.__file__), 'data', 'spinoza_cfg.yml')
