@@ -58,7 +58,11 @@ def run_qc(bids_dir, export_dir=None, **mriqc_options):
         print("Running qc for participants: %s" % ' '.join(participant_labels))
         cmd = f'docker run -it --rm -v {bids_dir}:/data:ro -v {qc_dir}:/out poldracklab/mriqc:latest /data /out participant ' + ' '.join(options_str).replace(' True', '')
         cmd += ' --participant_label %s' % ' '.join(participant_labels)
-        os.system(cmd)
+        fout = open(op.join(op.dirname(qc_dir), 'qc_stdout.txt'), 'a+')
+        ferr = open(op.join(op.dirname(qc_dir), 'qc_stderr.txt'), 'a+')
+        subprocess.run(cmd.split(' '), stdout=fout, stderr=ferr)
+        fout.close()
+        ferr.close()
 
     # Copy stuff back to server!
     if export_dir is not None:

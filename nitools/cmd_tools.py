@@ -4,6 +4,7 @@ import warnings
 import shutil
 import os.path as op
 import bidsify
+import subprocess
 from glob import glob
 from bidsify import bidsify as run_bidsify
 from .preproc import run_preproc
@@ -17,7 +18,7 @@ env_vars = {
         dropbox='/run/user/1000/gvfs/smb-share:server=bigbrother.fmg.uva.nl,share=dropbox$'
     ),
     'neuroimaging.lukas-snoek.com': dict(
-        server_home='/home/lsnoek/spinoza_data',
+        server_home='/home/lsnoek1/spinoza_data',
         fmri_proj='/mnt/lsnoek1/fmgstorage_share/fMRI Projects',
         dropbox='/mnt/lsnoek1/dropbox_share/fMRI Proejcts'
     ),
@@ -79,6 +80,8 @@ def run_qc_and_preproc():
 
             if not op.isdir(server_dir):
                 print("Copying data from %s to server ..." % sub_idf)
+                print(sub)
+                print(server_dir)
                 shutil.copytree(sub, server_dir)
                 print("done.")
             else:

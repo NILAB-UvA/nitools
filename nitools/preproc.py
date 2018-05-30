@@ -2,6 +2,7 @@ import os
 import os.path as op
 from glob import glob
 import shutil
+import subprocess
 
 
 default_args = {
@@ -84,7 +85,11 @@ def run_preproc(bids_dir, export_dir=None, **fmriprep_options):
     # Only run if there are actually participants to be processed
     if participant_labels:
         print("Running participants: %s ..." % ' '.join(participant_labels))
-        os.system(cmd)
+        fout = open(op.join(op.dirname(preproc_dir), 'fmriprep_stdout.txt'), 'a+')
+        ferr = open(op.join(op.dirname(preproc_dir), 'fmriprep_stderr.txt'), 'a+')
+        subprocess.run(cmd.split(' '), stdout=fout, stderr=ferr)
+        fout.close()
+        ferr.close()
 
     # If an export-dir is defined, copy stuff to export-dir (if None, nothing
     # is copied)
