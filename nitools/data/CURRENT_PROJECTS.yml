@@ -8,7 +8,7 @@ SpinozaTest:
     fmriprep_options:
         # args excluded: participant_label, task_id
         anat-only: False
-        fs-no-reconall: False  # options: [True, False]
+        fs-no-reconall: True  # options: [True, False]
         ignore: slicetiming  # options: [fieldmaps, slicetiming]
         bold2t1w-dof: 9  # options: [6, 9, 12]
         output-space: template  # options: [MNI, T1w, fsnative, fsaverage]
