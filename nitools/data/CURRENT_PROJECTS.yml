@@ -15,16 +15,41 @@ SpinozaTest:
         template-resampling-grid: native  # options: [1mm, 2mm]
         use-aroma: False  # options: [True, False]
         use-syn-sdc: False
-        nthreads: 1
-        omp-nthreads: 1
+        nthreads: 6
+        omp-nthreads: 6
 
     mriqc_options:
         fd_thres: 0.2
         correct-slice-timing: False
         verbose-reports: False
-        ants-nthreads: 1
-        n_procs: 1
+        ants-nthreads: 6
+        n_procs: 6
 
+RepliSC:
+
+    export_folder: fMRI Project SpinozaCenter
+    preproc: True
+    qc: True
+    multiple_sessions: False
+    
+    fmriprep_options:
+        anat_only: False
+        fs-no-reconall: True
+        ignore: slicetiming
+        bold2t1w-dof: 9
+        output-space: template
+        template-resampling-grid: native
+        use-aroma: False
+        use-syn-sdc: False
+        nthreads: 6
+        omp-nthreads: 6
+
+    mriqc_options:
+        fd_thres: 0.2
+        correct-slice-timing: False
+        verbose-reports: False
+        ants-nthreads: 6
+        n_procs: 6
 ########
 # Should freesurfer 'recon-all' be run? (Only do this when you're actually
 # planning to use freesurfer output, because this is very resource-intensive!
