@@ -25,9 +25,11 @@ default_args = {
 
 
 @click.command()
-@click.option('--bids_dir', default=op.abspath(os.getcwd()), help='BIDS-directory.')
+@click.option('--bids_dir', default=os.getcwd(), help='BIDS-directory.')
+@click.option('--out_dir', default=None, help='output-directory.')
 @click.option('--export_dir', default=None, help='Directory to export data.')
-def run_qc(bids_dir, export_dir=None, **mriqc_options):
+@click.option('--run_group', default=True, help='Whether to run qc-group.')
+def run_qc(bids_dir, out_dir=None, export_dir=None, run_group=True, **mriqc_options):
     """ Runs data from BIDS-directory through the MRIQC pipeline.
 
     Parameters
@@ -41,9 +43,16 @@ def run_qc(bids_dir, export_dir=None, **mriqc_options):
         Keyword arguments of mriqc-options
     """
 
+    # make sure is abspath
+    bids_dir = op.abspath(bids_dir)
+
+    if out_dir is None:
+        out_dir = op.join(op.dirname(bids_dir), 'qc')
+
+    out_dir = op.abspath(out_dir)
+
     # Define directories + find subjects which need to be processed
-    qc_dir = op.join(op.dirname(bids_dir), 'qc')
-    reports_dir = op.join(qc_dir, 'reports')
+    reports_dir = op.join(out_dir, 'reports')
     subs_done = [op.basename(s).split('.html')[0].split('_')[0]
                  for s in sorted(glob(op.join(reports_dir, '*html')))]
     bids_subs = [op.basename(f) for f in sorted(glob(op.join(bids_dir, 'sub*')))]
@@ -61,13 +70,15 @@ def run_qc(bids_dir, export_dir=None, **mriqc_options):
     # Run QC!
     if participant_labels:
         print("Running qc for participants: %s" % ' '.join(participant_labels))
-        cmd = f'docker run -it --rm -v {bids_dir}:/data:ro -v {qc_dir}:/out poldracklab/mriqc:latest /data /out participant ' + ' '.join(options_str).replace(' True', '')
+        cmd = f'docker run -it --rm -v {bids_dir}:/data:ro -v {out_dir}:/out poldracklab/mriqc:latest /data /out participant ' + ' '.join(options_str).replace(' True', '')
         cmd += ' --participant_label %s' % ' '.join(participant_labels)
-        fout = open(op.join(op.dirname(qc_dir), 'qc_stdout.txt'), 'a+')
-        ferr = open(op.join(op.dirname(qc_dir), 'qc_stderr.txt'), 'a+')
+        fout = open(op.join(op.dirname(out_dir), 'qc_stdout.txt'), 'a+')
+        ferr = open(op.join(op.dirname(out_dir), 'qc_stderr.txt'), 'a+')
         subprocess.run(cmd.split(' '), stdout=fout, stderr=ferr)
-        fout.close()
-        ferr.close()
+
+    if run_group:
+        cmd = f'docker run -it --rm -v {bids_dir}:/data:ro -v {qc_dir}:/out poldracklab/mriqc:latest /data /out group'
+        subprocess.run(cmd.split(' '))
 
     # Copy stuff back to server!
     if export_dir is not None:
