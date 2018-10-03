@@ -1,3 +1,4 @@
+import click
 import os
 import os.path as op
 from glob import glob
@@ -23,6 +24,9 @@ default_args = {
 }
 
 
+@click.command()
+@click.option('--bids_dir', default=op.abspath(os.getcwd()), help='BIDS-directory.')
+@click.option('--export_dir', default=None, help='Directory to export data.')
 def run_qc(bids_dir, export_dir=None, **mriqc_options):
     """ Runs data from BIDS-directory through the MRIQC pipeline.
 

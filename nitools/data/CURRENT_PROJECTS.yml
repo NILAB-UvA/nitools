@@ -1,33 +1,33 @@
-SpinozaTest:
-
-    export_folder: fMRI Project SpinozaCenter
-    preproc: True
-    qc: True
-    multiple_sessions: False
-
-    fmriprep_options:
+#SpinozaTest:
+#
+#    export_folder: fMRI Project SpinozaCenter
+#    preproc: True
+#    qc: False
+#    multiple_sessions: False
+#
+#    fmriprep_options:
         # args excluded: participant_label, task_id
-        anat-only: False
-        fs-no-reconall: True  # options: [True, False]
-        ignore: slicetiming  # options: [fieldmaps, slicetiming]
-        bold2t1w-dof: 9  # options: [6, 9, 12]
-        output-space: template  # options: [MNI, T1w, fsnative, fsaverage]
-        template-resampling-grid: native  # options: [1mm, 2mm]
-        use-aroma: False  # options: [True, False]
-        use-syn-sdc: False
-        nthreads: 6
-        omp-nthreads: 6
+#        anat-only: False
+#        fs-no-reconall: True  # options: [True, False]
+#        ignore: slicetiming  # options: [fieldmaps, slicetiming]
+#        bold2t1w-dof: 9  # options: [6, 9, 12]
+#        output-space: template  # options: [MNI, T1w, fsnative, fsaverage]
+#        template-resampling-grid: native  # options: [1mm, 2mm]
+#        use-aroma: False  # options: [True, False]
+#        use-syn-sdc: False
+#        nthreads: 6
+#        omp-nthreads: 6
 
-    mriqc_options:
-        fd_thres: 0.2
-        correct-slice-timing: False
-        verbose-reports: False
-        ants-nthreads: 6
-        n_procs: 6
+#    mriqc_options:
+#        fd_thres: 0.2
+#        correct-slice-timing: False
+#        verbose-reports: False
+#        ants-nthreads: 6
+#        n_procs: 6
 
 RepliSC:
 
-    export_folder: fMRI Project SpinozaCenter
+    export_folder: fMRI Project RepliSC
     preproc: True
     qc: True
     multiple_sessions: False

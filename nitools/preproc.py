@@ -1,3 +1,4 @@
+import click
 import os
 import os.path as op
 from glob import glob
@@ -43,6 +44,9 @@ default_args = {
 }
 
 
+@click.command()
+@click.option('--bids_dir', default=op.abspath(os.getcwd()), help='BIDS-directory.')
+@click.option('--export_dir', default=None, help='Directory to export data.')
 def run_preproc(bids_dir, export_dir=None, **fmriprep_options):
     """ Runs data from BIDS-directory through fmriprep pipeline.
 
@@ -86,7 +90,7 @@ def run_preproc(bids_dir, export_dir=None, **fmriprep_options):
     if participant_labels:
         print("Running participants: %s ..." % ' '.join(participant_labels))
         fout = open(op.join(op.dirname(preproc_dir), 'fmriprep_stdout.txt'), 'a+')
-        ferr = open(op.join(op.dirname(preproc_dir), 'fmriprep_stderr.txt'), 'a+')
+        ferr = open(op.join(op.dirname(preproc_dir), 'fmriprep_stderr.txt'), 'a+') 
         subprocess.run(cmd.split(' '), stdout=fout, stderr=ferr)
         fout.close()
         ferr.close()

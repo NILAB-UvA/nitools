@@ -34,7 +34,9 @@ opts = dict(name=NAME,
             requires=REQUIRES,
             entry_points={
                 'console_scripts': [
-                    'run_qc_and_preproc = nitools.cmd_tools:run_qc_and_preproc'
+                    'run_qc_and_preproc = nitools.cmd_tools:run_qc_and_preproc',
+                    'run_qc = nitools.qc:run_qc',
+                    'run_fmriprep = nitools.preproc:run_preproc'
                     ]
                 }
             )
