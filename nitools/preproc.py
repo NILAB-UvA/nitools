@@ -48,7 +48,8 @@ default_args = {
 @click.option('--bids_dir', default=os.getcwd(), help='BIDS-directory.')
 @click.option('--out_dir', default=None, help='output-directory.')
 @click.option('--export_dir', default=None, help='Directory to export data.')
-def run_preproc(bids_dir, out_dir=None, export_dir=None, **fmriprep_options):
+@click.option('--run_single', is_flag=True, help='Run a single subject at the time.')
+def run_preproc(bids_dir, run_single=True, out_dir=None, export_dir=None, **fmriprep_options):
     """ Runs data from BIDS-directory through fmriprep pipeline.
 
     Parameters
@@ -91,17 +92,25 @@ def run_preproc(bids_dir, out_dir=None, export_dir=None, **fmriprep_options):
     options_str = [key + ' ' + str(value) for key, value in all_fmriprep_options.items()]
 
     # Construct command
-    cmd = f'fmriprep-docker {bids_dir} {out_dir} ' + ' '.join(options_str).replace(' True', '')
-    cmd += ' --participant_label %s' % ' '.join(participant_labels)
+    cmd = f'fmriprep-docker {bids_dir} {out_dir} ' + ' '.join(options_str).replace(' True', '') 
+    if participant_labels:
+        if run_single:
+            cmds = [cmd + ' --participant_label %s' % plabel for plabel in participant_labels]
+        else:
+            cmds = [cmd + ' --participant_label %s' % ' '.join(participant_labels)]
+    else:
+        cmds = []
 
     # Only run if there are actually participants to be processed
-    if participant_labels:
-        print("Running participants: %s ..." % ' '.join(participant_labels))
-        fout = open(op.join(op.dirname(out_dir), 'fmriprep_stdout.txt'), 'a+')
-        ferr = open(op.join(op.dirname(out_dir), 'fmriprep_stderr.txt'), 'a+') 
-        subprocess.run(cmd.split(' '), stdout=fout, stderr=ferr)
-        fout.close()
-        ferr.close()
+    if cmds:
+        for cmd in cmds:
+            sub_label = cmd.split('--participant_label ')[-1]
+            print("Running participant(s): %s ..." % sub_label)
+            fout = open(op.join(op.dirname(out_dir), 'fmriprep_stdout.txt'), 'a+')
+            ferr = open(op.join(op.dirname(out_dir), 'fmriprep_stderr.txt'), 'a+') 
+            subprocess.run(cmd.split(' '), stdout=fout, stderr=ferr)
+            fout.close()
+            ferr.close()
 
     # If an export-dir is defined, copy stuff to export-dir (if None, nothing
     # is copied)
