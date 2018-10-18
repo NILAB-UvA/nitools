@@ -77,7 +77,7 @@ def run_qc(bids_dir, out_dir=None, export_dir=None, run_group=True, **mriqc_opti
         subprocess.run(cmd.split(' '), stdout=fout, stderr=ferr)
 
     if run_group:
-        cmd = f'docker run -it --rm -v {bids_dir}:/data:ro -v {qc_dir}:/out poldracklab/mriqc:latest /data /out group'
+        cmd = f'docker run -it --rm -v {bids_dir}:/data:ro -v {out_dir}:/out poldracklab/mriqc:latest /data /out group'
         subprocess.run(cmd.split(' '))
 
     # Copy stuff back to server!
