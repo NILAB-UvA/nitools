@@ -35,7 +35,7 @@ RepliSC:
     fmriprep_options:
         anat_only: False
         fs-no-reconall: True
-        ignore: slicetiming
+        ignore: fieldmaps
         bold2t1w-dof: 9
         output-space: template
         template-resampling-grid: native
@@ -50,6 +50,59 @@ RepliSC:
         verbose-reports: False
         ants-nthreads: 6
         n_procs: 6
+
+MindWandering:
+
+    export_folder: fMRI Project MindWandering
+    preproc: True
+    qc: True
+    multiple_sessions: False
+
+    fmriprep_options:
+        anat_only: False
+        fs-no-reconall: True
+        ignore: fieldmaps slicetiming
+        bold2t1w-dof: 9
+        output-space: template
+        template-resampling-grid: native
+        use-aroma: False
+        use-syn-sdc: False
+        nthreads: 6
+        omp-nthreads: 6
+
+    mriqc_options:
+        fd_thres: 0.2
+        correct-slice-timing: False
+        verbose-reports: False
+        ants-nthreads: 6
+        n_procs: 6
+
+ParadoxStudy:
+
+    export_folder: fMRI Project ParadoxStudy
+    preproc: True
+    qc: True
+    multiple_sessions: False
+
+    fmriprep_options:
+        anat_only: False
+        fs-no-reconall: True
+        ignore: fieldmaps
+        bold2t1w-dof: 9
+        output-space: template
+        template-resampling-grid: native
+        use-aroma: False
+        use-syn-sdc: False
+        nthreads: 6
+        omp-nthreads: 6
+
+    mriqc_options:
+        fd_thres: 0.2
+        correct-slice-timing: False
+        verbose-reports: False
+        ants-nthreads: 6
+        n_procs: 6
+
 ########
 # Should freesurfer 'recon-all' be run? (Only do this when you're actually
 # planning to use freesurfer output, because this is very resource-intensive!

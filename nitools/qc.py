@@ -4,6 +4,7 @@ import os.path as op
 from glob import glob
 import shutil
 import subprocess
+import yaml
 
 
 default_args = {
@@ -43,6 +44,14 @@ def run_qc(bids_dir, out_dir=None, export_dir=None, run_group=True, **mriqc_opti
         Keyword arguments of mriqc-options
     """
 
+    cp_file = op.join(op.dirname(__file__), 'data', 'CURRENT_PROJECTS.yml')
+    with open(cp_file, 'r') as cpf:
+        curr_projects = yaml.load(cpf)
+    
+    par_dir = op.basename(op.dirname(bids_dir))
+    if not mriqc_options and par_dir in curr_projects.keys():
+        mriqc_options = curr_projects[par_dir]['mriqc_options']
+
     # make sure is abspath
     bids_dir = op.abspath(bids_dir)
 
@@ -52,9 +61,8 @@ def run_qc(bids_dir, out_dir=None, export_dir=None, run_group=True, **mriqc_opti
     out_dir = op.abspath(out_dir)
 
     # Define directories + find subjects which need to be processed
-    reports_dir = op.join(out_dir, 'reports')
     subs_done = [op.basename(s).split('.html')[0].split('_')[0]
-                 for s in sorted(glob(op.join(reports_dir, '*html')))]
+                 for s in sorted(glob(op.join(out_dir, '*html')))]
     bids_subs = [op.basename(f) for f in sorted(glob(op.join(bids_dir, 'sub*')))]
 
     # Which subjects aren't processed yet?
@@ -75,6 +83,8 @@ def run_qc(bids_dir, out_dir=None, export_dir=None, run_group=True, **mriqc_opti
         fout = open(op.join(op.dirname(out_dir), 'qc_stdout.txt'), 'a+')
         ferr = open(op.join(op.dirname(out_dir), 'qc_stderr.txt'), 'a+')
         subprocess.run(cmd.split(' '), stdout=fout, stderr=ferr)
+    else:
+        print("All subjects seem to be have been QC'ed!")
 
     if run_group:
         cmd = f'docker run -it --rm -v {bids_dir}:/data:ro -v {out_dir}:/out poldracklab/mriqc:latest /data /out group'

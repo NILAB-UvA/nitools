@@ -80,8 +80,6 @@ def run_qc_and_preproc():
 
             if not op.isdir(server_dir):
                 print("Copying data from %s to server ..." % sub_idf)
-                print(sub)
-                print(server_dir)
                 shutil.copytree(sub, server_dir)
                 print("done.")
             else:

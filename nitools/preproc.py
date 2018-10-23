@@ -4,6 +4,7 @@ import os.path as op
 from glob import glob
 import shutil
 import subprocess
+import yaml
 
 
 default_args = {
@@ -66,6 +67,14 @@ def run_preproc(bids_dir, run_single=True, out_dir=None, export_dir=None, **fmri
         Keyword arguments of fmriprep-options
     """
 
+    cp_file = op.join(op.dirname(__file__), 'data', 'CURRENT_PROJECTS.yml')
+    with open(cp_file, 'r') as cpf:
+        curr_projects = yaml.load(cpf)
+
+    par_dir = op.basename(op.dirname(bids_dir))
+    if not fmriprep_options and par_dir in curr_projects.keys():
+        fmriprep_options = curr_projects[par_dir]['fmriprep_options']
+
     # make sure is abspath
     bids_dir = op.abspath(bids_dir)
 
@@ -111,6 +120,8 @@ def run_preproc(bids_dir, run_single=True, out_dir=None, export_dir=None, **fmri
             subprocess.run(cmd.split(' '), stdout=fout, stderr=ferr)
             fout.close()
             ferr.close()
+    else:
+        print('All subjects seem to have been preprocessed already!')
 
     # If an export-dir is defined, copy stuff to export-dir (if None, nothing
     # is copied)
