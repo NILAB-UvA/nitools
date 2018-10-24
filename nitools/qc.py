@@ -5,6 +5,7 @@ from glob import glob
 import shutil
 import subprocess
 import yaml
+from .utils import extract_kwargs_from_ctx
 
 
 default_args = {
@@ -25,14 +26,16 @@ default_args = {
 }
 
 
-@click.command()
+@click.command(name='run_qc', context_settings=dict(ignore_unknown_options=True, allow_extra_args=True))
 @click.option('--bids_dir', default=os.getcwd(), help='BIDS-directory.')
 @click.option('--out_dir', default=None, help='output-directory.')
 @click.option('--export_dir', default=None, help='Directory to export data.')
 @click.option('--run_single', is_flag=True, default=True, help='Whether to run a single subject at once')
 @click.option('--run_group', default=True, help='Whether to run qc-group.')
-def run_qc_cmd(bids_dir, out_dir=None, export_dir=None, run_single=True, run_group=True, **mriqc_options):
+@click.pass_context
+def run_qc_cmd(ctx, bids_dir, out_dir=None, export_dir=None, run_single=True, run_group=True, **mriqc_options):
     """ Run qc cmd interface """
+    mriqc_options = extract_kwargs_from_ctx(ctx)
     run_qc(bids_dir, out_dir, export_dir, run_single, run_group, **mriqc_options)
 
 
@@ -55,8 +58,8 @@ def run_qc(bids_dir, out_dir=None, export_dir=None, run_single=True, run_group=T
         curr_projects = yaml.load(cpf)
     
     par_dir = op.basename(op.dirname(bids_dir))
-    if not mriqc_options and par_dir in curr_projects.keys():
-        mriqc_options = curr_projects[par_dir]['mriqc_options']
+    if par_dir in curr_projects.keys():
+        mriqc_options.update(curr_projects[par_dir]['mriqc_options'])
 
     # make sure is abspath
     bids_dir = op.abspath(bids_dir)

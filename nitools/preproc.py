@@ -5,6 +5,7 @@ from glob import glob
 import shutil
 import subprocess
 import yaml
+from .utils import extract_kwargs_from_ctx
 
 
 default_args = {
@@ -45,13 +46,15 @@ default_args = {
 }
 
 
-@click.command()
+@click.command(name='run_preproc', context_settings=dict(ignore_unknown_options=True, allow_extra_args=True))
 @click.option('--bids_dir', default=os.getcwd(), help='BIDS-directory.')
 @click.option('--out_dir', default=None, help='output-directory.')
 @click.option('--export_dir', default=None, help='Directory to export data.')
 @click.option('--run_single', is_flag=True, default=True, help='Run a single subject at the time.')
-def run_preproc_cmd(bids_dir, run_single=True, out_dir=None, export_dir=None, **fmriprep_options):
+@click.pass_context
+def run_preproc_cmd(ctx, bids_dir, run_single=True, out_dir=None, export_dir=None, **fmriprep_options):
     """ CMD interface """
+    fmriprep_options = extract_kwargs_from_ctx(ctx)
     run_preproc(bids_dir, run_single, out_dir, export_dir, **fmriprep_options)
     
 
@@ -77,8 +80,8 @@ def run_preproc(bids_dir, run_single=True, out_dir=None, export_dir=None, **fmri
         curr_projects = yaml.load(cpf)
 
     par_dir = op.basename(op.dirname(bids_dir))
-    if not fmriprep_options and par_dir in curr_projects.keys():
-        fmriprep_options = curr_projects[par_dir]['fmriprep_options']
+    if par_dir in curr_projects.keys():
+        fmriprep_options.update(curr_projects[par_dir]['fmriprep_options'])
 
     # make sure is abspath
     bids_dir = op.abspath(bids_dir)
