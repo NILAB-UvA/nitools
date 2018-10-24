@@ -29,13 +29,14 @@ default_args = {
 @click.option('--bids_dir', default=os.getcwd(), help='BIDS-directory.')
 @click.option('--out_dir', default=None, help='output-directory.')
 @click.option('--export_dir', default=None, help='Directory to export data.')
+@click.option('--run_single', is_flag=True, default=True, help='Whether to run a single subject at once')
 @click.option('--run_group', default=True, help='Whether to run qc-group.')
-def run_qc_cmd(bids_dir, out_dir=None, export_dir=None, run_group=True, **mriqc_options):
+def run_qc_cmd(bids_dir, out_dir=None, export_dir=None, run_single=True, run_group=True, **mriqc_options):
     """ Run qc cmd interface """
-    run_qc(bids_dir, out_dir, export_dir, run_gorup, **mriqc_options)
+    run_qc(bids_dir, out_dir, export_dir, run_single, run_group, **mriqc_options)
 
 
-def run_qc(bids_dir, out_dir=None, export_dir=None, run_group=True, **mriqc_options):
+def run_qc(bids_dir, out_dir=None, export_dir=None, run_single=True, run_group=True, **mriqc_options):
     """ Runs data from BIDS-directory through the MRIQC pipeline.
 
     Parameters
@@ -80,16 +81,27 @@ def run_qc(bids_dir, out_dir=None, export_dir=None, run_group=True, **mriqc_opti
     all_mriqc_options = {key: value for key, value in default_args.items() if value}
     options_str = [key + ' ' + str(value) for key, value in all_mriqc_options.items()]
 
-    # Run QC!
+    cmd = f'docker run -it --rm -v {bids_dir}:/data:ro -v {out_dir}:/out poldracklab/mriqc:latest /data /out participant ' + ' '.join(options_str).replace(' True', '')
     if participant_labels:
-        print("Running qc for participants: %s" % ' '.join(participant_labels))
-        cmd = f'docker run -it --rm -v {bids_dir}:/data:ro -v {out_dir}:/out poldracklab/mriqc:latest /data /out participant ' + ' '.join(options_str).replace(' True', '')
-        cmd += ' --participant_label %s' % ' '.join(participant_labels)
-        fout = open(op.join(op.dirname(out_dir), 'qc_stdout.txt'), 'a+')
-        ferr = open(op.join(op.dirname(out_dir), 'qc_stderr.txt'), 'a+')
-        subprocess.run(cmd.split(' '), stdout=fout, stderr=ferr)
+        if run_single:
+            cmds = [cmd + ' --participant_label %s' % plabel for plabel in participant_labels]
+        else:
+            cmds = [cmd + ' --participant_label %s' % ' '.join(participant_labels)]
     else:
-        print("All subjects seem to be have been QC'ed!")
+        cmds = []
+
+    # Only run if there are actually participants to be processed
+    if cmds:
+        for cmd in cmds:
+            sub_label = cmd.split('--participant_label ')[-1]
+            print("Running participant(s): %s ..." % sub_label)
+            fout = open(op.join(op.dirname(out_dir), 'mriqc_stdout.txt'), 'a+')
+            ferr = open(op.join(op.dirname(out_dir), 'mriqc_stderr.txt'), 'a+')
+            subprocess.run(cmd.split(' '), stdout=fout, stderr=ferr)
+            fout.close()
+            ferr.close()
+    else:
+        print("All subjects seem to have been QC'ed already!")
 
     if run_group:
         cmd = f'docker run -it --rm -v {bids_dir}:/data:ro -v {out_dir}:/out poldracklab/mriqc:latest /data /out group'
