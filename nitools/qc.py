@@ -30,6 +30,11 @@ default_args = {
 @click.option('--out_dir', default=None, help='output-directory.')
 @click.option('--export_dir', default=None, help='Directory to export data.')
 @click.option('--run_group', default=True, help='Whether to run qc-group.')
+def run_qc_cmd(bids_dir, out_dir=None, export_dir=None, run_group=True, **mriqc_options):
+    """ Run qc cmd interface """
+    run_qc(bids_dir, out_dir, export_dir, run_gorup, **mriqc_options)
+
+
 def run_qc(bids_dir, out_dir=None, export_dir=None, run_group=True, **mriqc_options):
     """ Runs data from BIDS-directory through the MRIQC pipeline.
 

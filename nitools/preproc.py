@@ -49,7 +49,12 @@ default_args = {
 @click.option('--bids_dir', default=os.getcwd(), help='BIDS-directory.')
 @click.option('--out_dir', default=None, help='output-directory.')
 @click.option('--export_dir', default=None, help='Directory to export data.')
-@click.option('--run_single', is_flag=True, help='Run a single subject at the time.')
+@click.option('--run_single', is_flag=True, default=True, help='Run a single subject at the time.')
+def run_preproc_cmd(bids_dir, run_single=True, out_dir=None, export_dir=None, **fmriprep_options):
+    """ CMD interface """
+    run_preproc(bids_dir, run_single, out_dir, export_dir, **fmriprep_options)
+    
+
 def run_preproc(bids_dir, run_single=True, out_dir=None, export_dir=None, **fmriprep_options):
     """ Runs data from BIDS-directory through fmriprep pipeline.
 
