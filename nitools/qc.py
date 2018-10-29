@@ -16,11 +16,11 @@ default_args = {
     '--ica': False,
     '--hmc-afni': True,
     '--hmc-fsl': False,
-    '--fft-spikes-detector': False,
+    '--fft-spikes-detector': True,
     '--fd_thres': 0.2,
     '--ants-nthreads': 4,
     '--deoblique': False,
-    '--despike': False,
+    '--despike': True,
     '--correct-slice-timing': False
 
 }
