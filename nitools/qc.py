@@ -116,7 +116,7 @@ def run_qc(bids_dir, out_dir=None, export_dir=None, run_single=True, run_group=T
         if not op.isdir(copy_dir):
             os.makedirs(copy_dir)
 
-        proc_sub_data = sorted(glob(op.join(qc_dir, 'sub-*')))
+        proc_sub_data = sorted(glob(op.join(out_dir, 'sub-*')))
         done_sub_data = [op.basename(f) for f in sorted(glob(op.join(copy_dir, 'sub-*')))]
 
         for f in proc_sub_data:
