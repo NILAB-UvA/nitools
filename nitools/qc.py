@@ -121,8 +121,10 @@ def run_qc(bids_dir, out_dir=None, export_dir=None, run_single=True, run_group=T
 
         for f in proc_sub_data:
             if op.basename(f).split('_')[0] not in done_sub_data:
-                sub_qc_dir = op.join(copy_dir, op.basename(f).split('_')[0])
-                if not op.isdir(sub_qc_dir):
-                    os.makedirs(sub_qc_dir)
 
-                shutil.copyfile(f, op.join(sub_qc_dir, op.basename(f)))
+                if op.isfile(f):                
+                    shutil.copyfile(f, op.join(qc_dir, op.basename(f)))
+                elif op.isdir(f):
+                    shutil.copytree(f, op.join(qc_dir, op.basename(f)))
+                else:
+                    pass
