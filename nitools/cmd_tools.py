@@ -1,3 +1,4 @@
+import os
 import yaml
 import socket
 import warnings
@@ -48,6 +49,10 @@ def run_qc_and_preproc():
 
     # Loop over projects
     for proj_name, settings in curr_projects.items():
+        
+        if not settings['run_automatically']:
+            continue
+
         print("======== PROCESSING DATA FROM PROJECT %s ========" % proj_name)
 
         export_folder = settings['export_folder']
@@ -57,8 +62,8 @@ def run_qc_and_preproc():
             export_folder = op.join(env['dropbox'], export_folder)
 
         if not op.isdir(export_folder):
-            warnings.warn("The export-folder '%s' doesn't seem to"
-                          " exist!" % export_folder)
+            raise ValueError("The export-folder '%s' doesn't seem to"
+                             " exist!" % export_folder)
 
         proj_dir = op.join(env['server_home'], proj_name)
         # Check for raw subjects
@@ -103,6 +108,24 @@ def run_qc_and_preproc():
         run_bidsify(cfg_path=this_cfg, directory=op.join(proj_dir, 'raw'),
                     validate=True)
 
+        # Copy stuff to server
+        bids_export_folder = op.join(export_folder, 'bids')
+        if not op.isdir(bids_export_folder):
+            os.makedirs(bids_export_folder)
+
+        bids_out_dir = op.join(proj_dir, 'bids')
+        bids_files_on_server = sorted(glob(op.join(bids_out_dir, 'sub-*')))
+        for sub in bids_files_on_server:
+            sub_name = op.basename(sub)
+            if not op.isdir(op.join(bids_export_folder, sub_name)):
+                print('Copying files from %s to export-dir ...' % sub)
+                shutil.copytree(sub, op.join(bids_export_folder, sub_name))
+        
+        participants_file = op.join(bids_out_dir, 'participants.tsv')
+        shutil.copyfile(participants_file, op.join(bids_export_folder, op.basename(participants_file)))
+        dataset_descr_file = op.join(bids_out_dir, 'dataset_description.json')
+        shutil.copyfile(dataset_descr_file, op.join(bids_export_folder, op.basename(dataset_descr_file)))
+        
         if settings['preproc']:
             print("\n-------- RUNNING FMRIPREP --------")
             run_preproc(bids_dir=op.join(proj_dir, 'bids'),

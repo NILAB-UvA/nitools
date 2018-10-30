@@ -108,7 +108,9 @@ def run_qc(bids_dir, out_dir=None, export_dir=None, run_single=True, run_group=T
 
     if run_group:
         cmd = f'docker run -it --rm -v {bids_dir}:/data:ro -v {out_dir}:/out poldracklab/mriqc:latest /data /out group'
-        subprocess.run(cmd.split(' '))
+        fout = open(op.join(op.dirname(out_dir), 'mriqc_stdout.txt'), 'a+')
+        ferr = open(op.join(op.dirname(out_dir), 'mriqc_stderr.txt'), 'a+')
+        subprocess.run(cmd.split(' '), stdout=fout, stderr=ferr)
 
     # Copy stuff back to server!
     if export_dir is not None:
@@ -123,8 +125,8 @@ def run_qc(bids_dir, out_dir=None, export_dir=None, run_single=True, run_group=T
             if op.basename(f).split('_')[0] not in done_sub_data:
 
                 if op.isfile(f):                
-                    shutil.copyfile(f, op.join(qc_dir, op.basename(f)))
+                    shutil.copyfile(f, op.join(copy_dir, op.basename(f)))
                 elif op.isdir(f):
-                    shutil.copytree(f, op.join(qc_dir, op.basename(f)))
+                    shutil.copytree(f, op.join(copy_dir, op.basename(f)))
                 else:
                     pass

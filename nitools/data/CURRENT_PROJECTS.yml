@@ -31,6 +31,7 @@ RepliSC:
     preproc: True
     qc: True
     multiple_sessions: False
+    run_automatically: True
     
     fmriprep_options:
         anat_only: False
@@ -53,15 +54,16 @@ RepliSC:
 
 MindWandering:
 
-    export_folder: fMRI Project MindWandering
+    export_folder: fMRI Project Mind Wandering
     preproc: True
     qc: True
     multiple_sessions: False
+    run_automatically: False
 
     fmriprep_options:
         anat_only: False
         fs-no-reconall: True
-        ignore: fieldmaps slicetiming
+        ignore: slicetiming
         bold2t1w-dof: 9
         output-space: template
         template-resampling-grid: native
@@ -83,6 +85,7 @@ ParadoxStudy:
     preproc: True
     qc: True
     multiple_sessions: False
+    run_automatically: False
 
     fmriprep_options:
         anat_only: False
