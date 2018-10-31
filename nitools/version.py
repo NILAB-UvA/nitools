@@ -1,6 +1,9 @@
 from __future__ import absolute_import, division, print_function
 import os.path as op
 
+MRIQC_VERSION = '0.14.2'
+FMRIPREP_VERSION = '1.1.7'
+
 # Format expected by setup.py and doc/source/conf.py: string of form "X.Y.Z"
 _version_major = 0
 _version_minor = 1

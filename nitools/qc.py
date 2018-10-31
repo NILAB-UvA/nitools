@@ -22,7 +22,6 @@ default_args = {
     '--deoblique': False,
     '--despike': True,
     '--correct-slice-timing': False
-
 }
 
 
@@ -53,14 +52,20 @@ def run_qc(bids_dir, out_dir=None, export_dir=None, run_single=True, run_group=T
         Keyword arguments of mriqc-options
     """
 
+    from nitools.version import MRIQC_VERSION
+
     cp_file = op.join(op.dirname(__file__), 'data', 'CURRENT_PROJECTS.yml')
     with open(cp_file, 'r') as cpf:
         curr_projects = yaml.load(cpf)
     
     par_dir = op.basename(op.dirname(bids_dir))
     if par_dir in curr_projects.keys():
-        mriqc_options.update(curr_projects[par_dir]['mriqc_options'])
-
+        extra_opts = curr_projects[par_dir]['mriqc_options']
+        if 'version' in extra_opts.keys():  # override default
+            MRIQC_VERSION = extra_opts['version']
+            
+        mriqc_options.update(extra_opts)
+    
     # make sure is abspath
     bids_dir = op.abspath(bids_dir)
 
@@ -84,7 +89,7 @@ def run_qc(bids_dir, out_dir=None, export_dir=None, run_single=True, run_group=T
     all_mriqc_options = {key: value for key, value in default_args.items() if value}
     options_str = [key + ' ' + str(value) for key, value in all_mriqc_options.items()]
 
-    cmd = f'docker run -it --rm -v {bids_dir}:/data:ro -v {out_dir}:/out poldracklab/mriqc:latest /data /out participant ' + ' '.join(options_str).replace(' True', '')
+    cmd = f'docker run -it --rm -v {bids_dir}:/data:ro -v {out_dir}:/out poldracklab/mriqc:{MRIQC_VERSION} /data /out participant ' + ' '.join(options_str).replace(' True', '')
     if participant_labels:
         if run_single:
             cmds = [cmd + ' --participant_label %s' % plabel for plabel in participant_labels]
@@ -107,7 +112,7 @@ def run_qc(bids_dir, out_dir=None, export_dir=None, run_single=True, run_group=T
         print("All subjects seem to have been QC'ed already!")
 
     if run_group:
-        cmd = f'docker run -it --rm -v {bids_dir}:/data:ro -v {out_dir}:/out poldracklab/mriqc:latest /data /out group'
+        cmd = f'docker run -it --rm -v {bids_dir}:/data:ro -v {out_dir}:/out poldracklab/mriqc:{MRIQC_VERSION} /data /out group'
         fout = open(op.join(op.dirname(out_dir), 'mriqc_stdout.txt'), 'a+')
         ferr = open(op.join(op.dirname(out_dir), 'mriqc_stderr.txt'), 'a+')
         subprocess.run(cmd.split(' '), stdout=fout, stderr=ferr)

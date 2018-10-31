@@ -6,6 +6,7 @@ import shutil
 import subprocess
 import yaml
 from .utils import extract_kwargs_from_ctx
+from .version import FMRIPREP_VERSION
 
 
 default_args = {
@@ -42,7 +43,8 @@ default_args = {
     '--reports-only': False,
     '--run-uuid': False,
     '--write-graph': False,
-    '--stop-on-first-crash': False
+    '--stop-on-first-crash': False,
+    '--image': 'poldracklab/fmriprep:%s' % FMRIPREP_VERSION
 }
 
 
@@ -81,7 +83,11 @@ def run_preproc(bids_dir, run_single=True, out_dir=None, export_dir=None, **fmri
 
     par_dir = op.basename(op.dirname(bids_dir))
     if par_dir in curr_projects.keys():
-        fmriprep_options.update(curr_projects[par_dir]['fmriprep_options'])
+        extra_opts = curr_projects[par_dir]['fmriprep_options']
+        if 'version' in extra_opts.keys():
+            default_args['--imgage'] = 'poldracklab/fmriprep:%s' % extra_opts['version']
+
+        fmriprep_options.update(extra_opts)
 
     # make sure is abspath
     bids_dir = op.abspath(bids_dir)
