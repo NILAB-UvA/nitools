@@ -36,7 +36,8 @@ opts = dict(name=NAME,
                 'console_scripts': [
                     'run_qc_and_preproc = nitools.cmd_tools:run_qc_and_preproc',
                     'run_qc = nitools.qc:run_qc_cmd',
-                    'run_preproc = nitools.preproc:run_preproc_cmd'
+                    'run_preproc = nitools.preproc:run_preproc_cmd',
+                    'scale_MP2RAGE = nitools.anat:scale_MP2RAGE'
                     ]
                 }
             )
