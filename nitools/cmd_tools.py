@@ -6,6 +6,7 @@ import shutil
 import os.path as op
 import bidsify
 import subprocess
+import click
 from glob import glob
 from bidsify import bidsify as run_bidsify
 from .preproc import run_preproc
@@ -38,7 +39,9 @@ if 'MacBook' in hostname or 'vpn' in hostname:
 env = env_vars[hostname]
 
 
-def run_qc_and_preproc():
+@click.command(name='run_qc_and_preproc')
+@click.option('--project', default=None, type=str, help='Run for specific project?')
+def run_qc_and_preproc(project=None):
     """ Main function to run qc and preprocessing of Spinoza Centre (REC)
     data. """
 
@@ -47,9 +50,14 @@ def run_qc_and_preproc():
     with open(cp_file, 'r') as cpf:
         curr_projects = yaml.load(cpf)
 
+    
     # Loop over projects
     for proj_name, settings in curr_projects.items():
-        
+    
+        if project is not None:
+            if project != proj_name:
+                continue
+    
         if not settings['run_automatically']:
             continue
 
@@ -84,11 +92,11 @@ def run_qc_and_preproc():
                 server_dir = op.join(proj_dir, 'raw', sub_idf)
 
             if not op.isdir(server_dir):
-                print("Copying data from %s to server ..." % sub_idf)
+                print("Copying data from %s to server ..." % sub_idf, end=' ')
                 shutil.copytree(sub, server_dir)
                 print("done.")
             else:
-                print("Data from %s is already on server!" % sub_idf)
+                print("Data from %s is already on server!" % sub_idf, end=' ')
 
         # Also check for config.yml
         cfg_file = op.join(export_folder, 'raw', 'config.yml')
@@ -104,8 +112,14 @@ def run_qc_and_preproc():
         else:
             this_cfg = op.join(op.dirname(bidsify.__file__), 'data',
                                'spinoza_cfg.yml')
+        raw_dir = op.join(proj_dir, 'raw')
+        bidsignore_file = op.join(raw_dir, '.bidsignore')
 
-        run_bidsify(cfg_path=this_cfg, directory=op.join(proj_dir, 'raw'),
+        if not op.isfile(bidsignore_file):
+            with open(bidsignore_file, 'w') as big:
+                big.write('**/*.log\n**/*phy')
+
+        run_bidsify(cfg_path=this_cfg, directory=raw_dir,
                     validate=True)
 
         # Copy stuff to server

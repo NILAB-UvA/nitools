@@ -61,11 +61,10 @@ def run_qc(bids_dir, out_dir=None, export_dir=None, run_single=True, run_group=T
     par_dir = op.basename(op.dirname(bids_dir))
     if par_dir in curr_projects.keys():
         extra_opts = curr_projects[par_dir]['mriqc_options']
-        if 'version' in extra_opts.keys():  # override default
+        mriqc_options.update(extra_opts)
+        if 'version' in mriqc_options.keys():  # override default
             MRIQC_VERSION = extra_opts['version']
             
-        mriqc_options.update(extra_opts)
-    
     # make sure is abspath
     bids_dir = op.abspath(bids_dir)
 

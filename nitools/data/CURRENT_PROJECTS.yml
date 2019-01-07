@@ -85,9 +85,10 @@ ParadoxStudy:
     preproc: True
     qc: True
     multiple_sessions: False
-    run_automatically: False
+    run_automatically: True
 
     fmriprep_options:
+        version: '1.2.5'
         anat_only: False
         fs-no-reconall: True
         ignore: fieldmaps
@@ -95,11 +96,12 @@ ParadoxStudy:
         output-space: template
         template-resampling-grid: native
         use-aroma: False
-        use-syn-sdc: False
+        use-syn-sdc: True
         nthreads: 6
         omp-nthreads: 6
 
     mriqc_options:
+        version: '0.14.2'
         fd_thres: 0.2
         correct-slice-timing: False
         verbose-reports: False

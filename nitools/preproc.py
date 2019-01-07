@@ -84,10 +84,10 @@ def run_preproc(bids_dir, run_single=True, out_dir=None, export_dir=None, **fmri
     par_dir = op.basename(op.dirname(bids_dir))
     if par_dir in curr_projects.keys():
         extra_opts = curr_projects[par_dir]['fmriprep_options']
-        if 'version' in extra_opts.keys():
-            default_args['--imgage'] = 'poldracklab/fmriprep:%s' % extra_opts['version']
-
         fmriprep_options.update(extra_opts)
+        if 'version' in fmriprep_options.keys():
+            default_args['--image'] = 'poldracklab/fmriprep:%s' % extra_opts['version']
+            del fmriprep_options['version']
 
     # make sure is abspath
     bids_dir = op.abspath(bids_dir)
