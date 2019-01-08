@@ -64,7 +64,7 @@ def run_qc(bids_dir, out_dir=None, export_dir=None, run_single=True, run_group=T
         mriqc_options.update(extra_opts)
         if 'version' in mriqc_options.keys():  # override default
             MRIQC_VERSION = extra_opts['version']
-            
+            del mriqc_options['version']
     # make sure is abspath
     bids_dir = op.abspath(bids_dir)
 
@@ -100,6 +100,7 @@ def run_qc(bids_dir, out_dir=None, export_dir=None, run_single=True, run_group=T
     # Only run if there are actually participants to be processed
     if cmds:
         for cmd in cmds:
+            print(cmd)
             sub_label = cmd.split('--participant_label ')[-1]
             print("Running participant(s): %s ..." % sub_label)
             fout = open(op.join(op.dirname(out_dir), 'mriqc_stdout.txt'), 'a+')
