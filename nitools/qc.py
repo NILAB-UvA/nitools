@@ -100,7 +100,6 @@ def run_qc(bids_dir, out_dir=None, export_dir=None, run_single=True, run_group=T
     # Only run if there are actually participants to be processed
     if cmds:
         for cmd in cmds:
-            print(cmd)
             sub_label = cmd.split('--participant_label ')[-1]
             print("Running participant(s): %s ..." % sub_label)
             fout = open(op.join(op.dirname(out_dir), 'mriqc_stdout.txt'), 'a+')
