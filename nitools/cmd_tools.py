@@ -92,9 +92,11 @@ def run_qc_and_preproc(project=None):
                 server_dir = op.join(proj_dir, 'raw', sub_idf)
 
             if not op.isdir(server_dir):
-                print("Copying data from %s to server ..." % sub_idf, end=' ')
-                shutil.copytree(sub, server_dir)
-                print("done.")
+                n_files = len(os.listdir(sub))
+                if n_files > 0:
+                    print("Copying data from %s to server ..." % sub_idf, end=' ')
+                    shutil.copytree(sub, server_dir)
+                    print("done.")
             else:
                 print("Data from %s is already on server!" % sub_idf)
 
@@ -120,7 +122,7 @@ def run_qc_and_preproc(project=None):
                 big.write('**/*.log\n**/*phy')
 
         run_bidsify(cfg_path=this_cfg, directory=raw_dir,
-                    validate=True)
+                    validate=True, out_dir=op.join(proj_dir, 'bids'))
 
         # Copy stuff to server
         bids_export_folder = op.join(export_folder, 'bids')
