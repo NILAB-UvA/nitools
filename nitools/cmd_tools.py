@@ -49,19 +49,18 @@ def run_qc_and_preproc(project=None):
     cp_file = op.join(op.dirname(__file__), 'data', 'CURRENT_PROJECTS.yml')
     with open(cp_file, 'r') as cpf:
         curr_projects = yaml.load(cpf)
-
     
     # Loop over projects
     for proj_name, settings in curr_projects.items():
-    
+
         if project is not None:
             if project != proj_name:
                 continue
+        else:
+            if not settings['run_automatically']:
+                continue
     
-        if not settings['run_automatically']:
-            continue
-
-        print("======== PROCESSING DATA FROM PROJECT %s ========" % proj_name)
+        print("\n======== PROCESSING DATA FROM PROJECT %s ========" % proj_name)
 
         export_folder = settings['export_folder']
         if 'fMRI Project' in export_folder:
