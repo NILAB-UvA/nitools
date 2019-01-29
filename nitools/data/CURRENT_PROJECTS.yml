@@ -109,6 +109,35 @@ ParadoxStudy:
         ants-nthreads: 6
         n_procs: 6
 
+Conemo:
+
+    export_folder: fMRI Project MinderDrinken
+    preproc: True
+    qc: True
+    multiple_sessions: False
+    run_automatically: True
+
+    fmriprep_options:
+        version: '1.2.6'
+        anat_only: False
+        fs-no-reconall: False
+        ignore: slicetiming
+        bold2t1w-dof: 9
+        output-space: template
+        template-resampling-grid: 2mm
+        use-aroma: False
+        use-syn-sdc: False
+        nthreads: 6
+        omp-nthreads: 6
+
+    mriqc_options:
+        version: '0.14.2'
+        fd_thres: 0.2
+        correct-slice-timing: False
+        verbose-reports: False
+        ants-nthreads: 6
+        n_procs: 6
+
 ########
 # Should freesurfer 'recon-all' be run? (Only do this when you're actually
 # planning to use freesurfer output, because this is very resource-intensive!
