@@ -132,12 +132,13 @@ def run_qc(bids_dir, out_dir=None, export_dir=None, run_single=True, run_group=T
             os.makedirs(export_dir_mriqc)
 
         to_copy = sorted(glob(op.join(out_dir, '*')))
+
         for src in to_copy:
             dst = op.join(export_dir_mriqc, op.basename(src))
             if not op.exists(dst):
-                if op.isfile(dst):
+                if op.isfile(src):
                     shutil.copyfile(src, dst)
-                elif op.isdir(dst):
+                elif op.isdir(src):
                     shutil.copytree(src, dst)
                 else:
                     pass
