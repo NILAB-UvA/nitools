@@ -97,7 +97,8 @@ def run_qc_and_preproc(project=None):
                     shutil.copytree(sub, server_dir)
                     print("done.")
             else:
-                print("Data from %s is already on server!" % sub_idf)
+                pass
+                # print("Data from %s is already on server!" % sub_idf)
 
         # Also check for config.yml
         cfg_file = op.join(export_folder, 'raw', 'config.yml')

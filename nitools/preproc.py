@@ -5,6 +5,7 @@ from glob import glob
 import shutil
 import subprocess
 import yaml
+from datetime import datetime
 from .utils import extract_kwargs_from_ctx
 from .version import FMRIPREP_VERSION
 
@@ -77,13 +78,17 @@ def run_preproc(bids_dir, run_single=True, out_dir=None, export_dir=None, **fmri
         Keyword arguments of fmriprep-options
     """
 
+    project_name = op.basename(op.dirname(bids_dir))
+    date = datetime.now().strftime("%Y-%m-%d")
+    log_dir = op.join(op.dirname(op.dirname(bids_dir)), 'logs')
+    log_name = op.join(log_dir, 'project-%s_stage-fmriprep_%s' % (project_name, date))
+
     cp_file = op.join(op.dirname(__file__), 'data', 'CURRENT_PROJECTS.yml')
     with open(cp_file, 'r') as cpf:
         curr_projects = yaml.load(cpf)
 
-    par_dir = op.basename(op.dirname(bids_dir))
-    if par_dir in curr_projects.keys():
-        extra_opts = curr_projects[par_dir]['fmriprep_options']
+    if project_name in curr_projects.keys():
+        extra_opts = curr_projects[project_name]['fmriprep_options']
         fmriprep_options.update(extra_opts)
         if 'version' in fmriprep_options.keys():
             default_args['--image'] = 'poldracklab/fmriprep:%s' % extra_opts['version']
@@ -93,9 +98,12 @@ def run_preproc(bids_dir, run_single=True, out_dir=None, export_dir=None, **fmri
     bids_dir = op.abspath(bids_dir)
 
     if out_dir is None:
-        out_dir = op.join(op.dirname(bids_dir), 'preproc')
+        out_dir = op.join(bids_dir, 'derivatives')
 
     out_dir = op.abspath(out_dir)
+    
+    if not op.isdir(out_dir):
+        os.makedirs(out_dir)
 
     # Define directories + find subjects
     fmriprep_dir = op.join(out_dir, 'fmriprep')
@@ -129,8 +137,8 @@ def run_preproc(bids_dir, run_single=True, out_dir=None, export_dir=None, **fmri
         for cmd in cmds:
             sub_label = cmd.split('--participant_label ')[-1]
             print("Running participant(s): %s ..." % sub_label)
-            fout = open(op.join(op.dirname(out_dir), 'fmriprep_stdout.txt'), 'a+')
-            ferr = open(op.join(op.dirname(out_dir), 'fmriprep_stderr.txt'), 'a+') 
+            fout = open(log_name + '_stdout.txt', 'w')
+            ferr = open(log_name + '_stderr.txt', 'w') 
             subprocess.run(cmd.split(' '), stdout=fout, stderr=ferr)
             fout.close()
             ferr.close()
@@ -140,16 +148,26 @@ def run_preproc(bids_dir, run_single=True, out_dir=None, export_dir=None, **fmri
     # If an export-dir is defined, copy stuff to export-dir (if None, nothing
     # is copied)
     if export_dir is not None:
-        copy_dir = op.join(export_dir, 'preproc')
-        if not op.isdir(copy_dir):
-            os.makedirs(copy_dir)
+        export_dir_deriv = op.join(export_dir, 'bids', 'derivatives')
+        if not op.isdir(export_dir_deriv):
+            os.makedirs(export_dir_deriv)
 
-        proc_sub_data = sorted(glob(op.join(fmriprep_dir, 'sub-*')))
-        done_sub_data = [op.basename(f) for f in sorted(glob(op.join(copy_dir, 'sub-*')))]
+        for output_type in ['fmriprep', 'freesurfer']:
+            local_dir_deriv_otype = op.join(out_dir, output_type)
+            
+            if not op.isdir(local_dir_deriv_otype):
+                continue
 
-        for f in proc_sub_data:
-            if op.basename(f) not in done_sub_data:
-                if op.isdir(f):
-                    shutil.copytree(f, op.join(copy_dir, op.basename(f)))
-                else:
-                    shutil.copyfile(f, op.join(copy_dir, op.basename(f)))
+            export_dir_deriv_otype = op.join(export_dir_deriv, output_type)
+            
+            if not op.isdir(export_dir_deriv_otype):
+                os.makedirs(export_dir_deriv_otype)
+
+            to_copy = sorted(glob(op.join(local_dir_deriv_otype, '*')))
+            for src in to_copy:
+                dst = op.join(export_dir_deriv_otype, op.basename(src))
+                if not op.exists(dst):
+                    if op.isfile(src):
+                        shutil.copyfile(src, dst)
+                    elif op.isdir(src):
+                        shutil.copytree(src, dst)

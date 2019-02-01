@@ -1,10 +1,11 @@
 import click
 import os
-import os.path as op
-from glob import glob
 import shutil
 import subprocess
 import yaml
+import os.path as op
+from datetime import datetime
+from glob import glob
 from .utils import extract_kwargs_from_ctx
 
 
@@ -54,24 +55,32 @@ def run_qc(bids_dir, out_dir=None, export_dir=None, run_single=True, run_group=T
 
     from nitools.version import MRIQC_VERSION
 
+    project_name = op.basename(op.dirname(bids_dir))
+    date = datetime.now().strftime("%Y-%m-%d")
+    log_dir = op.join(op.dirname(op.dirname(bids_dir)), 'logs')
+    log_name = op.join(log_dir, 'project-%s_stage-mriqc_%s' % (project_name, date))
+
     cp_file = op.join(op.dirname(__file__), 'data', 'CURRENT_PROJECTS.yml')
     with open(cp_file, 'r') as cpf:
         curr_projects = yaml.load(cpf)
     
-    par_dir = op.basename(op.dirname(bids_dir))
-    if par_dir in curr_projects.keys():
-        extra_opts = curr_projects[par_dir]['mriqc_options']
+    if project_name in curr_projects.keys():
+        extra_opts = curr_projects[project_name]['mriqc_options']
         mriqc_options.update(extra_opts)
         if 'version' in mriqc_options.keys():  # override default
             MRIQC_VERSION = extra_opts['version']
             del mriqc_options['version']
+
     # make sure is abspath
     bids_dir = op.abspath(bids_dir)
 
     if out_dir is None:
-        out_dir = op.join(op.dirname(bids_dir), 'qc')
+        out_dir = op.join(bids_dir, 'derivatives', 'mriqc')
 
     out_dir = op.abspath(out_dir)
+
+    if not op.isdir(out_dir):
+        os.makedirs(out_dir)
 
     # Define directories + find subjects which need to be processed
     subs_done = [op.basename(s).split('.html')[0].split('_')[0]
@@ -102,8 +111,8 @@ def run_qc(bids_dir, out_dir=None, export_dir=None, run_single=True, run_group=T
         for cmd in cmds:
             sub_label = cmd.split('--participant_label ')[-1]
             print("Running participant(s): %s ..." % sub_label)
-            fout = open(op.join(op.dirname(out_dir), 'mriqc_stdout.txt'), 'a+')
-            ferr = open(op.join(op.dirname(out_dir), 'mriqc_stderr.txt'), 'a+')
+            fout = open(log_name  + '_stdout.txt', 'w')
+            ferr = open(log_name + '_stderr.txt', 'w')
             subprocess.run(cmd.split(' '), stdout=fout, stderr=ferr)
             fout.close()
             ferr.close()
@@ -112,25 +121,23 @@ def run_qc(bids_dir, out_dir=None, export_dir=None, run_single=True, run_group=T
 
     if run_group:
         cmd = f'docker run -it --rm -v {bids_dir}:/data:ro -v {out_dir}:/out poldracklab/mriqc:{MRIQC_VERSION} /data /out group'
-        fout = open(op.join(op.dirname(out_dir), 'mriqc_stdout.txt'), 'a+')
-        ferr = open(op.join(op.dirname(out_dir), 'mriqc_stderr.txt'), 'a+')
+        fout = open(log_name.replace('mriqc', 'mriqcGroup') + '_stdout.txt', 'w')
+        ferr = open(log_name.replace('mriqc', 'mriqcGroup') + '_stderr.txt', 'w')
         subprocess.run(cmd.split(' '), stdout=fout, stderr=ferr)
 
     # Copy stuff back to server!
     if export_dir is not None:
-        copy_dir = op.join(export_dir, 'qc')
-        if not op.isdir(copy_dir):
-            os.makedirs(copy_dir)
+        export_dir_mriqc = op.join(export_dir, 'bids', 'derivatives', 'mriqc')
+        if not op.isdir(export_dir_mriqc):
+            os.makedirs(export_dir_mriqc)
 
-        proc_sub_data = sorted(glob(op.join(out_dir, 'sub-*')))
-        done_sub_data = [op.basename(f) for f in sorted(glob(op.join(copy_dir, 'sub-*')))]
-
-        for f in proc_sub_data:
-            if op.basename(f).split('_')[0] not in done_sub_data:
-
-                if op.isfile(f):                
-                    shutil.copyfile(f, op.join(copy_dir, op.basename(f)))
-                elif op.isdir(f):
-                    shutil.copytree(f, op.join(copy_dir, op.basename(f)))
+        to_copy = sorted(glob(op.join(out_dir, '*')))
+        for src in to_copy:
+            dst = op.join(export_dir_mriqc, op.basename(src))
+            if not op.exists(dst):
+                if op.isfile(dst):
+                    shutil.copyfile(src, dst)
+                elif op.isdir(dst):
+                    shutil.copytree(src, dst)
                 else:
                     pass
