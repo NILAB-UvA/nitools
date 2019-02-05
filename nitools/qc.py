@@ -97,7 +97,7 @@ def run_qc(bids_dir, out_dir=None, export_dir=None, run_single=True, run_group=T
     all_mriqc_options = {key: value for key, value in default_args.items() if value}
     options_str = [key + ' ' + str(value) for key, value in all_mriqc_options.items()]
 
-    cmd = f'docker run -it --rm -v {bids_dir}:/data:ro -v {out_dir}:/out poldracklab/mriqc:{MRIQC_VERSION} /data /out participant ' + ' '.join(options_str).replace(' True', '')
+    cmd = f'docker run --rm -v {bids_dir}:/data:ro -v {out_dir}:/out poldracklab/mriqc:{MRIQC_VERSION} /data /out participant ' + ' '.join(options_str).replace(' True', '')
     if participant_labels:
         if run_single:
             cmds = [cmd + ' --participant_label %s' % plabel for plabel in participant_labels]
@@ -120,10 +120,12 @@ def run_qc(bids_dir, out_dir=None, export_dir=None, run_single=True, run_group=T
         print("All subjects seem to have been QC'ed already!")
 
     if run_group:
-        cmd = f'docker run -it --rm -v {bids_dir}:/data:ro -v {out_dir}:/out poldracklab/mriqc:{MRIQC_VERSION} /data /out group'
-        fout = open(log_name.replace('mriqc', 'mriqcGroup') + '_stdout.txt', 'w')
-        ferr = open(log_name.replace('mriqc', 'mriqcGroup') + '_stderr.txt', 'w')
-        subprocess.run(cmd.split(' '), stdout=fout, stderr=ferr)
+
+        if not op.isfile(op.join(out_dir, 'group_bold.html')):
+            cmd = f'docker run --rm -v {bids_dir}:/data:ro -v {out_dir}:/out poldracklab/mriqc:{MRIQC_VERSION} /data /out group'
+            fout = open(log_name.replace('mriqc', 'mriqcGroup') + '_stdout.txt', 'w')
+            ferr = open(log_name.replace('mriqc', 'mriqcGroup') + '_stderr.txt', 'w')
+            subprocess.run(cmd.split(' '), stdout=fout, stderr=ferr)
 
     # Copy stuff back to server!
     if export_dir is not None:

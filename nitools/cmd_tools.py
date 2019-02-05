@@ -9,6 +9,7 @@ import subprocess
 import click
 from glob import glob
 from bidsify import bidsify as run_bidsify
+from bidsify.docker import run_from_docker as run_bidsify_docker
 from .preproc import run_preproc
 from .qc import run_qc
 
@@ -41,7 +42,8 @@ env = env_vars[hostname]
 
 @click.command(name='run_qc_and_preproc')
 @click.option('--project', default=None, type=str, help='Run for specific project?')
-def run_qc_and_preproc(project=None):
+@click.option('--docker', is_flag=True, help='Run docker?')
+def run_qc_and_preproc(project=None, docker=False):
     """ Main function to run qc and preprocessing of Spinoza Centre (REC)
     data. """
 
@@ -121,8 +123,12 @@ def run_qc_and_preproc(project=None):
             with open(bidsignore_file, 'w') as big:
                 big.write('**/*.log\n**/*phy')
 
-        run_bidsify(cfg_path=this_cfg, directory=raw_dir,
-                    validate=True, out_dir=op.join(proj_dir, 'bids'))
+        if docker:
+            run_bidsify_docker(cfg_path=this_cfg, directory=raw_dir,
+                               validate=True, out_dir=op.join(proj_dir, 'bids'), spinoza=True)
+        else:
+            run_bidsify(cfg_path=this_cfg, directory=raw_dir,
+                        validate=True, out_dir=op.join(proj_dir, 'bids'))
 
         # Copy stuff to server
         bids_export_folder = op.join(export_folder, 'bids')
