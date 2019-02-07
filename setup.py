@@ -32,6 +32,7 @@ opts = dict(name=NAME,
             package_data=PACKAGE_DATA,
             install_requires=REQUIRES,
             requires=REQUIRES,
+            scripts=['bin/fslvbm_2_template_fmriprep', 'bin/fslvbm_3_proc_fmriprep'],
             entry_points={
                 'console_scripts': [
                     'run_qc_and_preproc = nitools.cmd_tools:run_qc_and_preproc',
