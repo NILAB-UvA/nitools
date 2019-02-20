@@ -31,7 +31,7 @@ default_args = {
     '--template-resampling-grid': 'native',
     '--medial-surface-nan': False,
     '--use-aroma': False,
-    '--skull-strip-template': 'OASIS',
+    # '--skull-strip-template': 'OASIS',  # GIVES AN ERROR >1.3.1
     '--fmap-bspline': False,
     '--fmap-no-demean': False,
     '--use-syn-sdc': False,
@@ -83,7 +83,7 @@ def run_preproc(bids_dir, run_single=True, out_dir=None, export_dir=None, **fmri
     log_dir = op.join(op.dirname(op.dirname(bids_dir)), 'logs')
     log_name = op.join(log_dir, 'project-%s_stage-fmriprep_%s' % (project_name, date))
 
-    cp_file = op.join(op.dirname(__file__), 'data', 'CURRENT_PROJECTS.yml')
+    cp_file = op.join(op.dirname(op.dirname(bids_dir)), 'CURRENT_PROJECTS.yml')
     with open(cp_file, 'r') as cpf:
         curr_projects = yaml.load(cpf)
 

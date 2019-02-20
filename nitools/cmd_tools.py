@@ -51,7 +51,7 @@ def run_qc_and_preproc(project=None, docker=False):
     data. """
 
     # Open file with currently running projects
-    cp_file = op.join(op.dirname(__file__), 'data', 'CURRENT_PROJECTS.yml')
+    cp_file = op.join(env['server_home'], 'CURRENT_PROJECTS.yml')
     with open(cp_file, 'r') as cpf:
         curr_projects = yaml.load(cpf)
    

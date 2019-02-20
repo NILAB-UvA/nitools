@@ -60,7 +60,7 @@ def run_qc(bids_dir, out_dir=None, export_dir=None, run_single=True, run_group=T
     log_dir = op.join(op.dirname(op.dirname(bids_dir)), 'logs')
     log_name = op.join(log_dir, 'project-%s_stage-mriqc_%s' % (project_name, date))
 
-    cp_file = op.join(op.dirname(__file__), 'data', 'CURRENT_PROJECTS.yml')
+    cp_file = op.join(op.dirname(op.dirname(bids_dir)), 'CURRENT_PROJECTS.yml')
     with open(cp_file, 'r') as cpf:
         curr_projects = yaml.load(cpf)
     
