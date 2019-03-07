@@ -101,7 +101,7 @@ def run_preproc(bids_dir, run_single=True, out_dir=None, export_dir=None, **fmri
         out_dir = op.join(bids_dir, 'derivatives')
 
     out_dir = op.abspath(out_dir)
-    
+
     if not op.isdir(out_dir):
         os.makedirs(out_dir)
 
