@@ -143,7 +143,7 @@ def run_qc_and_preproc(project=None, docker=False):
 
         if not op.isfile(bidsignore_file):
             with open(bidsignore_file, 'w') as big:
-                big.write('**/*.log\n**/*phy')
+                big.write('**/*.log\n**/*phy\nbids_validator_log.txt\nunallocated')
 
         if docker:
             run_bidsify_docker(cfg_path=this_cfg, directory=raw_dir,

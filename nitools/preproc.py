@@ -136,6 +136,9 @@ def run_preproc(bids_dir, run_single=True, out_dir=None, export_dir=None, **fmri
     if cmds:
         for cmd in cmds:
             sub_label = cmd.split('--participant_label ')[-1]
+            if not op.isdir(bids_dir, 'sub-' + sub_label, 'func'):
+                cmd += ' --anat-only'
+
             print("Running participant(s): %s ..." % sub_label)
             fout = open(log_name + '_stdout.txt', 'w')
             ferr = open(log_name + '_stderr.txt', 'w') 
