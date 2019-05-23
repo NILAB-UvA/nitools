@@ -25,6 +25,7 @@ default_args = {
     '--t2s-coreg': False,
     '--bold2t1w-dof': 9,
     '--output-space': 'template',
+    '--output-spaces': 'MNI152NLin6Asym T1w',
     '--force-bbr': False,
     '--force-no-bbr': False,
     '--template': 'MNI152NLin2009cAsym',
@@ -45,7 +46,8 @@ default_args = {
     '--run-uuid': False,
     '--write-graph': False,
     '--stop-on-first-crash': False,
-    '--image': 'poldracklab/fmriprep:%s' % FMRIPREP_VERSION
+    '--image': 'poldracklab/fmriprep:%s' % FMRIPREP_VERSION,
+    '--notrack': True
 }
 
 
@@ -77,6 +79,9 @@ def run_preproc(bids_dir, run_single=True, out_dir=None, export_dir=None, **fmri
     **fmriprep_options: kwargs
         Keyword arguments of fmriprep-options
     """
+
+    if not op.isdir(bids_dir):
+        raise ValueError("%s is not an existing directory!" % bids_dir)
 
     project_name = op.basename(op.dirname(bids_dir))
     date = datetime.now().strftime("%Y-%m-%d")
@@ -120,6 +125,14 @@ def run_preproc(bids_dir, run_single=True, out_dir=None, export_dir=None, **fmri
     fmriprep_options = {('--' + key): value for key, value in fmriprep_options.items()}
     default_args.update(fmriprep_options)
     all_fmriprep_options = {key: value for key, value in default_args.items() if value}
+
+    if all_fmriprep_options['--image'].split(':')[-1] > '1.3.2':
+        del all_fmriprep_options['--output-space']
+        del all_fmriprep_options['--template']
+        del all_fmriprep_options['--template-resampling-grid']
+    else:
+        del all_fmriprep_options['--output-spaces']
+
     options_str = [key + ' ' + str(value) for key, value in all_fmriprep_options.items()]
 
     # Construct command
@@ -136,8 +149,17 @@ def run_preproc(bids_dir, run_single=True, out_dir=None, export_dir=None, **fmri
     if cmds:
         for cmd in cmds:
             sub_label = cmd.split('--participant_label ')[-1]
-            if not op.isdir(bids_dir, 'sub-' + sub_label, 'func'):
-                cmd += ' --anat-only'
+            func_dirs = glob(op.join(bids_dir, 'sub-' + sub_label, '**', 'func'), recursive=True)
+            if len(func_dirs) == 0:
+                cmd += ' --anat-only'  # no functional files!
+            
+            anat_dirs = glob(op.join(bids_dir, 'sub-' + sub_label, '**', 'anat'), recursive=True)
+            if len(anat_dirs) == 0:
+                print("Cannot run %s, because doesn't have an anat folder!" % sub_label)
+                continue
+
+            if op.isfile(op.join(out_dir, 'freesurfer', 'sub-' + sub_label, 'scripts', 'IsRunning.lh+rh')):
+                print("Skipping %s, because it's currently being preprocessed by freesurfer" % sub_label)
 
             print("Running participant(s): %s ..." % sub_label)
             fout = open(log_name + '_stdout.txt', 'w')
