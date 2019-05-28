@@ -78,6 +78,9 @@ def _run_project(proj_name, settings, project, docker):
         raise ValueError(msg)
 
     proj_dir = op.join(ENV['server_home'], proj_name)
+    if not op.isdir(proj_dir):
+        os.makedirs(proj_dir)
+
     still_running_f = op.join(proj_dir, 'StillRunning.txt')
     if op.isfile(still_running_f):
         return None
@@ -148,7 +151,7 @@ def _run_project(proj_name, settings, project, docker):
     for sub in bids_files_on_server:
         sub_name = op.basename(sub)
         if not op.isdir(op.join(bids_export_folder, sub_name)):
-            logger.info('Copying files from %s to export-dir ...' % sub)
+            print('Copying files from %s to export-dir ...' % sub)
             shutil.copytree(sub, op.join(bids_export_folder, sub_name))
     
     participants_file = op.join(bids_out_dir, 'participants.tsv')
