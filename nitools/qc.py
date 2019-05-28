@@ -121,11 +121,10 @@ def run_qc(bids_dir, out_dir=None, export_dir=None, run_single=True, run_group=T
 
     if run_group:
 
-        if not op.isfile(op.join(out_dir, 'group_bold.html')):
-            cmd = f'docker run --rm -v {bids_dir}:/data:ro -v {out_dir}:/out poldracklab/mriqc:{MRIQC_VERSION} /data /out group'
-            fout = open(log_name.replace('mriqc', 'mriqcGroup') + '_stdout.txt', 'w')
-            ferr = open(log_name.replace('mriqc', 'mriqcGroup') + '_stderr.txt', 'w')
-            subprocess.run(cmd.split(' '), stdout=fout, stderr=ferr)
+        cmd = f'docker run --rm -v {bids_dir}:/data:ro -v {out_dir}:/out poldracklab/mriqc:{MRIQC_VERSION} /data /out group'
+        fout = open(log_name.replace('mriqc', 'mriqcGroup') + '_stdout.txt', 'w')
+        ferr = open(log_name.replace('mriqc', 'mriqcGroup') + '_stderr.txt', 'w')
+        subprocess.run(cmd.split(' '), stdout=fout, stderr=ferr)
 
     # Copy stuff back to server!
     if export_dir is not None:
@@ -137,7 +136,7 @@ def run_qc(bids_dir, out_dir=None, export_dir=None, run_single=True, run_group=T
 
         for src in to_copy:
             dst = op.join(export_dir_mriqc, op.basename(src))
-            if not op.exists(dst):
+            if not op.exists(dst) or 'group_' in op.basename(src):
                 if op.isfile(src):
                     shutil.copyfile(src, dst)
                 elif op.isdir(src):

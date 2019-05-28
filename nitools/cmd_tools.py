@@ -83,6 +83,7 @@ def _run_project(proj_name, settings, project, docker):
 
     still_running_f = op.join(proj_dir, 'StillRunning.txt')
     if op.isfile(still_running_f):
+        print('Project %s is still running!' % proj_name)
         return None
     else:
         with open(still_running_f, 'w') as f_out:
