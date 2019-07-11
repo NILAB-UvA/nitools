@@ -39,7 +39,7 @@ def run_qc_cmd(ctx, bids_dir, out_dir=None, export_dir=None, run_single=True, ru
     run_qc(bids_dir, out_dir, export_dir, run_single, run_group, **mriqc_options)
 
 
-def run_qc(bids_dir, out_dir=None, export_dir=None, run_single=True, run_group=True, **mriqc_options):
+def run_qc(bids_dir, out_dir=None, export_dir=None, run_single=True, run_group=True, uid=None, **mriqc_options):
     """ Runs data from BIDS-directory through the MRIQC pipeline.
 
     Parameters
@@ -54,6 +54,11 @@ def run_qc(bids_dir, out_dir=None, export_dir=None, run_single=True, run_group=T
     """
 
     from nitools.version import MRIQC_VERSION
+
+    if uid is None:
+        uid = str(os.getuid())
+    else:
+        uid = str(uid)  # make sure that it's a string
 
     project_name = op.basename(op.dirname(bids_dir))
     date = datetime.now().strftime("%Y-%m-%d")
@@ -97,7 +102,11 @@ def run_qc(bids_dir, out_dir=None, export_dir=None, run_single=True, run_group=T
     all_mriqc_options = {key: value for key, value in default_args.items() if value}
     options_str = [key + ' ' + str(value) for key, value in all_mriqc_options.items()]
 
-    cmd = f'docker run --rm -v {bids_dir}:/data:ro -v {out_dir}:/out poldracklab/mriqc:{MRIQC_VERSION} /data /out participant ' + ' '.join(options_str).replace(' True', '')
+    qc_workdir = op.join(bids_dir, 'work', 'mriqc')
+    if not op.isdir(qc_workdir):
+        os.makedirs(qc_workdir, exist_ok=True)
+
+    cmd = f'docker run --rm -u {uid} -v {bids_dir}:/data:ro -v {out_dir}:/out -v {qc_workdir}:/scratch poldracklab/mriqc:{MRIQC_VERSION} /data /out -w /scratch participant ' + ' '.join(options_str).replace(' True', '')
     if participant_labels:
         if run_single:
             cmds = [cmd + ' --participant_label %s' % plabel for plabel in participant_labels]
@@ -121,10 +130,13 @@ def run_qc(bids_dir, out_dir=None, export_dir=None, run_single=True, run_group=T
 
     if run_group:
 
-        cmd = f'docker run --rm -v {bids_dir}:/data:ro -v {out_dir}:/out poldracklab/mriqc:{MRIQC_VERSION} /data /out group'
+        cmd = f'docker run --rm -u {uid} -v {bids_dir}:/data:ro -v {out_dir}:/out poldracklab/mriqc:{MRIQC_VERSION} /data /out group'
         fout = open(log_name.replace('mriqc', 'mriqcGroup') + '_stdout.txt', 'w')
         ferr = open(log_name.replace('mriqc', 'mriqcGroup') + '_stderr.txt', 'w')
         subprocess.run(cmd.split(' '), stdout=fout, stderr=ferr)
+
+    if op.isdir(qc_workdir):
+        shutil.rmtree(qc_workdir)
 
     # Copy stuff back to server!
     if export_dir is not None:

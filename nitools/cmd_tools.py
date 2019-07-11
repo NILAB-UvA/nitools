@@ -27,17 +27,15 @@ env_vars = {
     'neuroimaging.lukas-snoek.com': dict(
         server_home='/home/lsnoek1/spinoza_data',
         fmri_proj='/mnt/lsnoek1/fmgstorage_share/fMRI Projects',
-        dropbox='/mnt/lsnoek1/dropbox_share/fMRI Proejcts'
+        dropbox='/mnt/lsnoek1/dropbox_share/fMRI Projects'
     )
 }
 
 # Check on which platform this is running (work desktop, pers. laptop, server)
 hostname = socket.gethostname()
-if 'MacBook' in hostname or 'vpn' in hostname:
-    hostname = 'MacBook'
-
 ENV = env_vars[hostname]
 
+UID = '1002'
 
 @click.command(name='run_qc_and_preproc')
 @click.option('--project', default=None, type=str, help='Run for specific project?')
@@ -61,10 +59,10 @@ def _run_project(proj_name, settings, project, docker):
 
     if project is not None:
         if project != proj_name:
-            return None
+            return None  # skip if not the supplied project name
     else:
         if not settings['run_automatically']:
-            return None
+            return None  # only run if indicated to do so
 
     export_folder = settings['export_folder']
     if 'fMRI Project' in export_folder:
@@ -74,7 +72,6 @@ def _run_project(proj_name, settings, project, docker):
 
     if not op.isdir(export_folder):
         msg = "The export-folder '%s' doesn't seem to exist!" % export_folder
-        print(msg)
         raise ValueError(msg)
 
     proj_dir = op.join(ENV['server_home'], proj_name)
@@ -133,11 +130,12 @@ def _run_project(proj_name, settings, project, docker):
 
     if not op.isfile(bidsignore_file):
         with open(bidsignore_file, 'w') as big:
-            big.write('**/*.log\n**/*phy\nbids_validator_log.txt\nunallocated')
+            big.write('**/*.log\n**/*phy\nbids_validator_log.txt\nunallocated\nwork')
 
     if docker:
         run_bidsify_docker(cfg_path=this_cfg, directory=raw_dir,
-                            validate=True, out_dir=op.join(proj_dir, 'bids'), spinoza=True)
+                           validate=True, out_dir=op.join(proj_dir, 'bids'), spinoza=True,
+                           uid=UID)  # this should not be hard-coded!
     else:
         run_bidsify(cfg_path=this_cfg, directory=raw_dir,
                     validate=True, out_dir=op.join(proj_dir, 'bids'))
@@ -152,23 +150,34 @@ def _run_project(proj_name, settings, project, docker):
     for sub in bids_files_on_server:
         sub_name = op.basename(sub)
         if not op.isdir(op.join(bids_export_folder, sub_name)):
-            print('Copying files from %s to export-dir ...' % sub)
+            
+            print('Copying bidsified files from %s to export-dir ...' % sub)
             shutil.copytree(sub, op.join(bids_export_folder, sub_name))
     
     participants_file = op.join(bids_out_dir, 'participants.tsv')
     shutil.copyfile(participants_file, op.join(bids_export_folder, op.basename(participants_file)))
     dataset_descr_file = op.join(bids_out_dir, 'dataset_description.json')
-    shutil.copyfile(dataset_descr_file, op.join(bids_export_folder, op.basename(dataset_descr_file)))
+    if not op.isfile(dataset_descr_file):
+        shutil.copyfile(dataset_descr_file,
+                        op.join(bids_export_folder, op.basename(dataset_descr_file)))
 
     if settings['preproc']:
+        fp_workdir = op.join(bids_out_dir, 'work', 'fmriprep')
+        if not op.isdir(fp_workdir):  # otherwise it's created as root!
+            os.makedirs(fp_workdir, exist_ok=True)
+
         print("\n-------- RUNNING FMRIPREP FOR %s --------" % proj_name)
         run_preproc(bids_dir=op.join(proj_dir, 'bids'),
-                    export_dir=export_folder,
+                    export_dir=export_folder, uid=UID,
                     **settings['fmriprep_options'])
 
     if settings['qc']:
+        qc_workdir = op.join(bids_out_dir, 'work', 'mriqc')
+        if not op.isdir(qc_workdir):
+            os.makedirs(qc_workdir)
+
         print("\n-------- RUNNING MRIQC FOR %s --------" % proj_name)
-        run_qc(bids_dir=op.join(proj_dir, 'bids'),
+        run_qc(bids_dir=op.join(proj_dir, 'bids'), uid=UID,
                 export_dir=export_folder, **settings['mriqc_options'])
 
     if op.isfile(still_running_f):

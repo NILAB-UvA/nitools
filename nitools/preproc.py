@@ -40,7 +40,6 @@ default_args = {
     '--fs-no-reconall': True,
     '--no-submm-recon': False,
     '--fs-license-file': '/usr/local/freesurfer/license.txt',
-    '-w': False,
     '--resource-monitor': True,
     '--reports-only': False,
     '--run-uuid': False,
@@ -63,22 +62,30 @@ def run_preproc_cmd(ctx, bids_dir, run_single=True, out_dir=None, export_dir=Non
     run_preproc(bids_dir, run_single, out_dir, export_dir, **fmriprep_options)
     
 
-def run_preproc(bids_dir, run_single=True, out_dir=None, export_dir=None, **fmriprep_options):
+def run_preproc(bids_dir, run_single=True, out_dir=None, export_dir=None, uid=None, **fmriprep_options):
     """ Runs data from BIDS-directory through fmriprep pipeline.
 
     Parameters
     ----------
     bids_dir: str
         Absolute path to BIDS-directory
+    run_single : bool
+        Whether to run the subjects one-by-one (i.e., separate fmriprep call per subject)
+    out_dir : str
+        Where to store the results (default: $bids_dir/derivatives)
     export_dir : str or None
         If string, it points to a path to copy the data to. If None,
         this is ignored
-    subs: list of str
-        List of subject-identifiers (e.g., sub-0001) which need to be run
-        through the pipeline
+    uid : str
+        User-id to run the container with
     **fmriprep_options: kwargs
         Keyword arguments of fmriprep-options
     """
+
+    if uid is None:
+        uid = str(os.getuid())
+    else:
+        uid = str(uid)  # make sure that it's a string
 
     if not op.isdir(bids_dir):
         raise ValueError("%s is not an existing directory!" % bids_dir)
@@ -112,13 +119,30 @@ def run_preproc(bids_dir, run_single=True, out_dir=None, export_dir=None, **fmri
 
     # Define directories + find subjects
     fmriprep_dir = op.join(out_dir, 'fmriprep')
-    subs_done = [op.basename(s).split('.html')[0]
-                 for s in sorted(glob(op.join(fmriprep_dir, '*html')))]
-    bids_subs = [op.basename(f) for f in sorted(glob(op.join(bids_dir, 'sub*')))]
+
+    # Check which subjects need to be preprocessed
+    bids_subs = [sd for sd in sorted(glob(op.join(bids_dir, 'sub-*'))) if op.isdir(sd)]
+    to_process = []
+    for bs in bids_subs:
+        sub_base = op.basename(bs)
+        ses_dirs = [sesd for sesd in sorted(glob(op.join(bs, 'ses-*'))) if op.isdir(sesd)]
+        if ses_dirs:
+            ses_proc = []
+            for sesd in ses_dirs:
+                this_ses = op.basename(sesd)
+                if op.isdir(op.join(fmriprep_dir, sub_base, this_ses, 'func')):
+                    ses_proc.append(True)
+                else:
+                    ses_proc.append(False)
+            if not all(ses_proc):  # not all sessions preprocessed yet!
+                to_process.append(sub_base)
+        else:
+            fdir = op.join(fmriprep_dir, sub_base, 'func')
+            if not op.isdir(fdir):  # not processed yet!
+                to_process.append(sub_base)           
 
     # Define subjects which need to be preprocessed
-    participant_labels = [sub.split('-')[1] for sub in bids_subs
-                          if sub not in subs_done]
+    participant_labels = [sub.split('-')[1] for sub in to_process]
 
     # Merge default arguments and desided arguments from user (which will)
     # overwrite default arguments
@@ -135,8 +159,12 @@ def run_preproc(bids_dir, run_single=True, out_dir=None, export_dir=None, **fmri
 
     options_str = [key + ' ' + str(value) for key, value in all_fmriprep_options.items()]
 
+    fp_workdir = op.join(bids_dir, 'work', 'fmriprep')
+    if not op.isdir(fp_workdir):
+        os.makedirs(fp_workdir, exist_ok=True)
+
     # Construct command
-    cmd = f'fmriprep-docker {bids_dir} {out_dir} ' + ' '.join(options_str).replace(' True', '') 
+    cmd = f'fmriprep-docker {bids_dir} {out_dir} -w {fp_workdir} -u {uid} ' + ' '.join(options_str).replace(' True', '') 
     if participant_labels:
         if run_single:
             cmds = [cmd + ' --participant_label %s' % plabel for plabel in participant_labels]
@@ -162,6 +190,7 @@ def run_preproc(bids_dir, run_single=True, out_dir=None, export_dir=None, **fmri
                 print("Skipping %s, because it's currently being preprocessed by freesurfer" % sub_label)
 
             print("Running participant(s): %s ..." % sub_label)
+            print(cmd)
             fout = open(log_name + '_stdout.txt', 'w')
             ferr = open(log_name + '_stderr.txt', 'w') 
             subprocess.run(cmd.split(' '), stdout=fout, stderr=ferr)
@@ -169,6 +198,9 @@ def run_preproc(bids_dir, run_single=True, out_dir=None, export_dir=None, **fmri
             ferr.close()
     else:
         print('All subjects seem to have been preprocessed already!')
+
+    if op.isdir(fp_workdir):
+        shutil.rmtree(fp_workdir)
 
     # If an export-dir is defined, copy stuff to export-dir (if None, nothing
     # is copied)
