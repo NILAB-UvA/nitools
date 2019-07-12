@@ -34,7 +34,6 @@ env_vars = {
 # Check on which platform this is running (work desktop, pers. laptop, server)
 hostname = socket.gethostname()
 ENV = env_vars[hostname]
-
 UID = '1002'
 
 @click.command(name='run_qc_and_preproc')
@@ -182,3 +181,17 @@ def _run_project(proj_name, settings, project, docker):
 
     if op.isfile(still_running_f):
         os.remove(still_running_f)
+
+
+@click.command(name='start_nitools')
+def start_nitools():
+    """ Start nitools service """
+    sr_files = glob(op.join(ENV['server_home'], '*', 'StillRunning.txt'))
+    for sr_file in sr_files:
+        print(f"Removing {sr_file}!")
+        #os.remove(sr_file)
+
+    cmd = "sudo mount -t cifs -o username=lsnoek1,uid=1002,gid=1002 //fmgstorage.fmg.uva.nl/psychology$ /mnt/lsnoek1/fmgstorage_share/"
+    subprocess.run(cmd.split(' '))
+    cmd = "sudo mount -t cifs -o username=lsnoek1,uid=1002,gid=1002 //bigbrother.fmg.uva.nl/dropbox$ /mnt/lsnoek1/dropbox_share/"
+    subprocess.run(cmd.split(' '))

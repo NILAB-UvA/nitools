@@ -35,6 +35,7 @@ opts = dict(name=NAME,
             scripts=['bin/fslvbm_2_template_fmriprep', 'bin/fslvbm_3_proc_fmriprep'],
             entry_points={
                 'console_scripts': [
+                    'start_nitools = nitools.cmd_tools:start_nitools',
                     'run_qc_and_preproc = nitools.cmd_tools:run_qc_and_preproc',
                     'run_qc = nitools.qc:run_qc_cmd',
                     'run_preproc = nitools.preproc:run_preproc_cmd',

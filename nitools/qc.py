@@ -106,7 +106,7 @@ def run_qc(bids_dir, out_dir=None, export_dir=None, run_single=True, run_group=T
     if not op.isdir(qc_workdir):
         os.makedirs(qc_workdir, exist_ok=True)
 
-    cmd = f'docker run --rm -u {uid} -v {bids_dir}:/data:ro -v {out_dir}:/out -v {qc_workdir}:/scratch poldracklab/mriqc:{MRIQC_VERSION} /data /out -w /scratch participant ' + ' '.join(options_str).replace(' True', '')
+    cmd = f'docker run --rm -u {uid}:{uid} -v {bids_dir}:/data:ro -v {out_dir}:/out -v {qc_workdir}:/scratch poldracklab/mriqc:{MRIQC_VERSION} /data /out -w /scratch participant ' + ' '.join(options_str).replace(' True', '')
     if participant_labels:
         if run_single:
             cmds = [cmd + ' --participant_label %s' % plabel for plabel in participant_labels]

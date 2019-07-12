@@ -164,7 +164,7 @@ def run_preproc(bids_dir, run_single=True, out_dir=None, export_dir=None, uid=No
         os.makedirs(fp_workdir, exist_ok=True)
 
     # Construct command
-    cmd = f'fmriprep-docker {bids_dir} {out_dir} -w {fp_workdir} -u {uid} ' + ' '.join(options_str).replace(' True', '') 
+    cmd = f'fmriprep-docker {bids_dir} {out_dir} -w {fp_workdir} -u {uid}:{uid} ' + ' '.join(options_str).replace(' True', '') 
     if participant_labels:
         if run_single:
             cmds = [cmd + ' --participant_label %s' % plabel for plabel in participant_labels]
