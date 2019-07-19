@@ -87,14 +87,28 @@ def run_qc(bids_dir, out_dir=None, export_dir=None, run_single=True, run_group=T
     if not op.isdir(out_dir):
         os.makedirs(out_dir)
 
-    # Define directories + find subjects which need to be processed
-    subs_done = [op.basename(s).split('.html')[0].split('_')[0]
-                 for s in sorted(glob(op.join(out_dir, '*html')))]
-    bids_subs = [op.basename(f) for f in sorted(glob(op.join(bids_dir, 'sub*')))]
+    bids_subs = [sd for sd in sorted(glob(op.join(bids_dir, 'sub-*'))) if op.isdir(sd)]
+    to_process = []
+    for bs in bids_subs:
+        sub_base = op.basename(bs)
+        ses_dirs = [sesd for sesd in sorted(glob(op.join(bs, 'ses-*'))) if op.isdir(sesd)]
+        if ses_dirs:
+            ses_proc = []
+            for sesd in ses_dirs:
+                this_ses = op.basename(sesd)
+                if op.isdir(op.join(out_dir, sub_base, this_ses)):
+                    ses_proc.append(True)
+                else:
+                    ses_proc.append(False)
+            if not all(ses_proc):  # not all sessions preprocessed yet!
+                to_process.append(sub_base)
+        else:
+            this_dir = op.join(out_dir, sub_base)
+            if not op.isdir(this_dir):  # not processed yet!
+                to_process.append(sub_base)
 
-    # Which subjects aren't processed yet?
-    participant_labels = [sub.split('-')[1]
-                          for sub in bids_subs if sub not in subs_done]
+    # Define subjects which need to be preprocessed
+    participant_labels = [sub.split('-')[1] for sub in to_process]
 
     # Merge default options and user-defined options
     mriqc_options = {('--' + key): value for key, value in mriqc_options.items()}

@@ -125,8 +125,11 @@ def _run_project(proj_name, settings, project, docker):
         this_cfg = op.join(op.dirname(bidsify.__file__), 'data',
                            'spinoza_cfg.yml')
     raw_dir = op.join(proj_dir, 'raw')
-    bidsignore_file = op.join(raw_dir, '.bidsignore')
+    bids_dir = op.join(proj_dir, 'bids')
+    if not op.isdir(bids_dir):
+        os.makedirs(bids_dir)
 
+    bidsignore_file = op.join(bids_dir, '.bidsignore')
     if not op.isfile(bidsignore_file):
         with open(bidsignore_file, 'w') as big:
             big.write('**/*.log\n**/*phy\nbids_validator_log.txt\nunallocated\nwork')
