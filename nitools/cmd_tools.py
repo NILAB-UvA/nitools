@@ -192,7 +192,7 @@ def start_nitools():
     sr_files = glob(op.join(ENV['server_home'], '*', 'StillRunning.txt'))
     for sr_file in sr_files:
         print(f"Removing {sr_file}!")
-        #os.remove(sr_file)
+        os.remove(sr_file)
 
     cmd = "sudo mount -t cifs -o username=lsnoek1,uid=1002,gid=1002 //fmgstorage.fmg.uva.nl/psychology$ /mnt/lsnoek1/fmgstorage_share/"
     subprocess.run(cmd.split(' '))
