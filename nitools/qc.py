@@ -28,18 +28,19 @@ default_args = {
 
 @click.command(name='run_qc', context_settings=dict(ignore_unknown_options=True, allow_extra_args=True))
 @click.option('--bids_dir', default=os.getcwd(), help='BIDS-directory.')
+@click.option('--work_dir', default=op.join(os.getcwd(), 'work', 'mriqc'), help='Work-directory')
 @click.option('--out_dir', default=None, help='output-directory.')
 @click.option('--export_dir', default=None, help='Directory to export data.')
 @click.option('--run_single', is_flag=True, default=True, help='Whether to run a single subject at once')
 @click.option('--run_group', default=True, help='Whether to run qc-group.')
 @click.pass_context
-def run_qc_cmd(ctx, bids_dir, out_dir=None, export_dir=None, run_single=True, run_group=True, **mriqc_options):
+def run_qc_cmd(ctx, bids_dir, work_dir=None, out_dir=None, export_dir=None, run_single=True, run_group=True, **mriqc_options):
     """ Run qc cmd interface """
     mriqc_options = extract_kwargs_from_ctx(ctx)
     run_qc(bids_dir, out_dir, export_dir, run_single, run_group, **mriqc_options)
 
 
-def run_qc(bids_dir, out_dir=None, export_dir=None, run_single=True, run_group=True, uid=None, **mriqc_options):
+def run_qc(bids_dir, work_dir=None, out_dir=None, export_dir=None, run_single=True, run_group=True, uid=None, **mriqc_options):
     """ Runs data from BIDS-directory through the MRIQC pipeline.
 
     Parameters
@@ -54,6 +55,15 @@ def run_qc(bids_dir, out_dir=None, export_dir=None, run_single=True, run_group=T
     """
 
     from nitools.version import MRIQC_VERSION
+
+    if not op.isdir(bids_dir):
+        raise ValueError(f"Bids-dir {bids_dir} doesn't exist!")
+
+    if work_dir is None:
+        work_dir = op.join(op.dirname(bids_dir), 'work', 'mriqc')
+
+    if not op.isdir(work_dir):
+        os.makedirs(work_dir, exist_ok=True)
 
     if uid is None:
         uid = str(os.getuid())
@@ -116,11 +126,7 @@ def run_qc(bids_dir, out_dir=None, export_dir=None, run_single=True, run_group=T
     all_mriqc_options = {key: value for key, value in default_args.items() if value}
     options_str = [key + ' ' + str(value) for key, value in all_mriqc_options.items()]
 
-    qc_workdir = op.join(bids_dir, 'work', 'mriqc')
-    if not op.isdir(qc_workdir):
-        os.makedirs(qc_workdir, exist_ok=True)
-
-    cmd = f'docker run --rm -u {uid}:{uid} -v {bids_dir}:/data:ro -v {out_dir}:/out -v {qc_workdir}:/scratch poldracklab/mriqc:{MRIQC_VERSION} /data /out -w /scratch participant ' + ' '.join(options_str).replace(' True', '')
+    cmd = f'docker run --rm -u {uid}:{uid} -v {bids_dir}:/data:ro -v {out_dir}:/out -v {work_dir}:/scratch poldracklab/mriqc:{MRIQC_VERSION} /data /out -w /scratch participant ' + ' '.join(options_str).replace(' True', '')
     if participant_labels:
         if run_single:
             cmds = [cmd + ' --participant_label %s' % plabel for plabel in participant_labels]

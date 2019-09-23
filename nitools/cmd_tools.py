@@ -85,7 +85,7 @@ def _run_project(proj_name, settings, project, docker):
         with open(still_running_f, 'w') as f_out:
             f_out.write('Started %s' % datetime.now())
 
-    # Check for raw subjects
+    # Check for "raw" subjects
     if settings['multiple_sessions']:
         search_str = op.join(export_folder, 'raw', 'sub-*', 'ses-*')
         subs_in_raw = sorted(glob(search_str))
@@ -124,15 +124,18 @@ def _run_project(proj_name, settings, project, docker):
     else:
         this_cfg = op.join(op.dirname(bidsify.__file__), 'data',
                            'spinoza_cfg.yml')
+
     raw_dir = op.join(proj_dir, 'raw')
     bids_dir = op.join(proj_dir, 'bids')
-    if not op.isdir(bids_dir):
-        os.makedirs(bids_dir)
+    work_dir = op.join(proj_dir, 'work')
+    for dr in [bids_dir, work_dir]:
+        if not op.isdir(dr):
+            os.makedirs(dr)
 
     bidsignore_file = op.join(bids_dir, '.bidsignore')
     if not op.isfile(bidsignore_file):
         with open(bidsignore_file, 'w') as big:
-            big.write('**/*.log\n**/*phy\nbids_validator_log.txt\nunallocated\nwork')
+            big.write('**/*.log\n**/*phy\nbids_validator_log.txt\nunallocated')
 
     if docker:
         run_bidsify_docker(cfg_path=this_cfg, directory=raw_dir,
@@ -164,23 +167,23 @@ def _run_project(proj_name, settings, project, docker):
                         op.join(bids_export_folder, op.basename(dataset_descr_file)))
 
     if settings['preproc']:
-        fp_workdir = op.join(bids_out_dir, 'work', 'fmriprep')
+        fp_workdir = op.join(work_dir, 'fmriprep')
         if not op.isdir(fp_workdir):  # otherwise it's created as root!
             os.makedirs(fp_workdir, exist_ok=True)
 
         print("\n-------- RUNNING FMRIPREP FOR %s --------" % proj_name)
-        run_preproc(bids_dir=op.join(proj_dir, 'bids'),
+        run_preproc(bids_dir=op.join(proj_dir, 'bids'), work_dir=fp_workdir,
                     export_dir=export_folder, uid=UID,
                     **settings['fmriprep_options'])
 
     if settings['qc']:
-        qc_workdir = op.join(bids_out_dir, 'work', 'mriqc')
+        qc_workdir = op.join(work_dir, 'mriqc')
         if not op.isdir(qc_workdir):
             os.makedirs(qc_workdir)
 
         print("\n-------- RUNNING MRIQC FOR %s --------" % proj_name)
-        run_qc(bids_dir=op.join(proj_dir, 'bids'), uid=UID,
-                export_dir=export_folder, **settings['mriqc_options'])
+        run_qc(bids_dir=op.join(proj_dir, 'bids'), uid=UID, work_dir=qc_workdir,
+               export_dir=export_folder, **settings['mriqc_options'])
 
     if op.isfile(still_running_f):
         os.remove(still_running_f)
