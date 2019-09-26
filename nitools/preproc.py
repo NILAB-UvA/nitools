@@ -56,14 +56,16 @@ default_args = {
 @click.option('--out_dir', default=None, help='output-directory.')
 @click.option('--export_dir', default=None, help='Directory to export data.')
 @click.option('--run_single', is_flag=True, default=True, help='Run a single subject at the time.')
+@click.option('--uid', default=None, help='Run container as uid')
+@click.option('--nolog', is_flag=True, default=False, help='Wheter to print instead of logging.')
 @click.pass_context
-def run_preproc_cmd(ctx, bids_dir, work_dir=None, out_dir=None, export_dir=None, run_single=True, uid=None, **fmriprep_options):
+def run_preproc_cmd(ctx, bids_dir, work_dir=None, out_dir=None, export_dir=None, run_single=True, uid=None, nolog=False, **fmriprep_options):
     """ CMD interface """
     fmriprep_options = extract_kwargs_from_ctx(ctx)
-    run_preproc(bids_dir, work_dir, out_dir, export_dir, run_single, uid, **fmriprep_options)
+    run_preproc(bids_dir, work_dir, out_dir, export_dir, run_single, uid, nolog, **fmriprep_options)
     
 
-def run_preproc(bids_dir, work_dir=None, out_dir=None, export_dir=None, run_single=True, uid=None, **fmriprep_options):
+def run_preproc(bids_dir, work_dir=None, out_dir=None, export_dir=None, run_single=True, uid=None, nolog=False, **fmriprep_options):
     """ Runs data from BIDS-directory through fmriprep pipeline.
 
     Parameters
@@ -99,8 +101,10 @@ def run_preproc(bids_dir, work_dir=None, out_dir=None, export_dir=None, run_sing
 
     project_name = op.basename(op.dirname(bids_dir))
     date = datetime.now().strftime("%Y-%m-%d")
-    log_dir = op.join(op.dirname(op.dirname(bids_dir)), 'logs')
-    log_name = op.join(log_dir, 'project-%s_stage-fmriprep_%s' % (project_name, date))
+
+    if not nolog:
+        log_dir = op.join(op.dirname(op.dirname(bids_dir)), 'logs')
+        log_name = op.join(log_dir, 'project-%s_stage-fmriprep_%s' % (project_name, date))
 
     cp_file = op.join(op.dirname(op.dirname(bids_dir)), 'CURRENT_PROJECTS.yml')
     with open(cp_file, 'r') as cpf:
@@ -193,16 +197,18 @@ def run_preproc(bids_dir, work_dir=None, out_dir=None, export_dir=None, run_sing
 
             print("Running participant(s): %s ..." % sub_label)
             print(cmd)
-            fout = open(log_name + '_stdout.txt', 'w')
-            ferr = open(log_name + '_stderr.txt', 'w') 
-            subprocess.run(cmd.split(' '), stdout=fout, stderr=ferr)
-            fout.close()
-            ferr.close()
+
+            if not nolog:  # we do want a logfile (instead of stderr/out)!
+                fout = open(log_name + '_stdout.txt', 'w')
+                ferr = open(log_name + '_stderr.txt', 'w') 
+                subprocess.run(cmd.split(' '), stdout=fout, stderr=ferr) 
+                fout.close()
+                ferr.close()
+            else:
+                subprocess.run(cmd.split(' '))
+
     else:
         print('All subjects seem to have been preprocessed already!')
-
-    if op.isdir(fp_workdir):
-        shutil.rmtree(fp_workdir)
 
     # If an export-dir is defined, copy stuff to export-dir (if None, nothing
     # is copied)

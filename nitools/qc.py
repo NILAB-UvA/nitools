@@ -33,14 +33,16 @@ default_args = {
 @click.option('--export_dir', default=None, help='Directory to export data.')
 @click.option('--run_single', is_flag=True, default=True, help='Whether to run a single subject at once')
 @click.option('--run_group', default=True, help='Whether to run qc-group.')
+@click.option('--uid', default=None, help='Run container as uid')
+@click.option('--nolog', is_flag=True, help='Use stderr/out instead of log')
 @click.pass_context
-def run_qc_cmd(ctx, bids_dir, work_dir=None, out_dir=None, export_dir=None, run_single=True, run_group=True, **mriqc_options):
+def run_qc_cmd(ctx, bids_dir, work_dir=None, out_dir=None, export_dir=None, run_single=True, run_group=True, uid=None, nolog=False, **mriqc_options):
     """ Run qc cmd interface """
     mriqc_options = extract_kwargs_from_ctx(ctx)
-    run_qc(bids_dir, out_dir, export_dir, run_single, run_group, **mriqc_options)
+    run_qc(bids_dir, out_dir, export_dir, run_single, run_group, uid, nolog, **mriqc_options)
 
 
-def run_qc(bids_dir, work_dir=None, out_dir=None, export_dir=None, run_single=True, run_group=True, uid=None, **mriqc_options):
+def run_qc(bids_dir, work_dir=None, out_dir=None, export_dir=None, run_single=True, run_group=True, uid=None, nolog=False, **mriqc_options):
     """ Runs data from BIDS-directory through the MRIQC pipeline.
 
     Parameters
@@ -72,8 +74,10 @@ def run_qc(bids_dir, work_dir=None, out_dir=None, export_dir=None, run_single=Tr
 
     project_name = op.basename(op.dirname(bids_dir))
     date = datetime.now().strftime("%Y-%m-%d")
-    log_dir = op.join(op.dirname(op.dirname(bids_dir)), 'logs')
-    log_name = op.join(log_dir, 'project-%s_stage-mriqc_%s' % (project_name, date))
+
+    if not nolog:
+        log_dir = op.join(op.dirname(op.dirname(bids_dir)), 'logs')
+        log_name = op.join(log_dir, 'project-%s_stage-mriqc_%s' % (project_name, date))
 
     cp_file = op.join(op.dirname(op.dirname(bids_dir)), 'CURRENT_PROJECTS.yml')
     with open(cp_file, 'r') as cpf:
@@ -140,23 +144,28 @@ def run_qc(bids_dir, work_dir=None, out_dir=None, export_dir=None, run_single=Tr
         for cmd in cmds:
             sub_label = cmd.split('--participant_label ')[-1]
             print("Running participant(s): %s ..." % sub_label)
-            fout = open(log_name  + '_stdout.txt', 'w')
-            ferr = open(log_name + '_stderr.txt', 'w')
-            subprocess.run(cmd.split(' '), stdout=fout, stderr=ferr)
-            fout.close()
-            ferr.close()
+            
+            if not nolog:
+                fout = open(log_name  + '_stdout.txt', 'w')
+                ferr = open(log_name + '_stderr.txt', 'w')
+                subprocess.run(cmd.split(' '), stdout=fout, stderr=ferr)
+                fout.close()
+                ferr.close()
+            else:
+                subprocess.run(cmd.split(' '))
+    
     else:
         print("All subjects seem to have been QC'ed already!")
 
     if run_group:
 
         cmd = f'docker run --rm -u {uid} -v {bids_dir}:/data:ro -v {out_dir}:/out poldracklab/mriqc:{MRIQC_VERSION} /data /out group'
-        fout = open(log_name.replace('mriqc', 'mriqcGroup') + '_stdout.txt', 'w')
-        ferr = open(log_name.replace('mriqc', 'mriqcGroup') + '_stderr.txt', 'w')
-        subprocess.run(cmd.split(' '), stdout=fout, stderr=ferr)
-
-    if op.isdir(qc_workdir):
-        shutil.rmtree(qc_workdir)
+        if not nolog:
+            fout = open(log_name.replace('mriqc', 'mriqcGroup') + '_stdout.txt', 'w')
+            ferr = open(log_name.replace('mriqc', 'mriqcGroup') + '_stderr.txt', 'w')
+            subprocess.run(cmd.split(' '), stdout=fout, stderr=ferr)
+        else:
+            subprocess.run(cmd.split(' '))
 
     # Copy stuff back to server!
     if export_dir is not None:

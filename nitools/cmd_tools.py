@@ -40,7 +40,8 @@ UID = '1002'
 @click.option('--project', default=None, type=str, help='Run for specific project?')
 @click.option('--docker', is_flag=True, help='Run docker?')
 @click.option('--n-cpus', default=6, help='Number of CPUs to use in parallel')
-def run_qc_and_preproc(project=None, docker=False, n_cpus=6):
+@click.option('--nolog', is_flag=True, help='Print stout/err instead of logging')
+def run_qc_and_preproc(project=None, docker=False, n_cpus=6, nolog=False):
     """ Main function to run qc and preprocessing of Spinoza Centre (REC)
     data. """
 
@@ -50,11 +51,11 @@ def run_qc_and_preproc(project=None, docker=False, n_cpus=6):
         curr_projects = yaml.load(cpf)
    
     return_codes = jl.Parallel(n_jobs=n_cpus)(jl.delayed(_run_project)
-            (proj_name, settings, project, docker) for proj_name, settings in curr_projects.items()
+            (proj_name, settings, project, docker, nolog) for proj_name, settings in curr_projects.items()
     )
 
 
-def _run_project(proj_name, settings, project, docker):
+def _run_project(proj_name, settings, project, docker, nolog):
 
     if project is not None:
         if project != proj_name:
@@ -173,7 +174,7 @@ def _run_project(proj_name, settings, project, docker):
 
         print("\n-------- RUNNING FMRIPREP FOR %s --------" % proj_name)
         run_preproc(bids_dir=op.join(proj_dir, 'bids'), work_dir=fp_workdir,
-                    export_dir=export_folder, uid=UID,
+                    export_dir=export_folder, uid=UID, nolog=nolog,
                     **settings['fmriprep_options'])
 
     if settings['qc']:
@@ -183,7 +184,7 @@ def _run_project(proj_name, settings, project, docker):
 
         print("\n-------- RUNNING MRIQC FOR %s --------" % proj_name)
         run_qc(bids_dir=op.join(proj_dir, 'bids'), uid=UID, work_dir=qc_workdir,
-               export_dir=export_folder, **settings['mriqc_options'])
+               export_dir=export_folder, nolog=nolog, **settings['mriqc_options'])
 
     if op.isfile(still_running_f):
         os.remove(still_running_f)
