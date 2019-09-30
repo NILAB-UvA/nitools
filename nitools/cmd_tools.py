@@ -141,7 +141,7 @@ def _run_project(proj_name, settings, project, docker, nolog):
     if docker:
         run_bidsify_docker(cfg_path=this_cfg, directory=raw_dir,
                            validate=True, out_dir=op.join(proj_dir, 'bids'), spinoza=True,
-                           uid=UID)  # this should not be hard-coded!
+                           uid=UID, nolog=nolog)  # this should not be hard-coded!
     else:
         run_bidsify(cfg_path=this_cfg, directory=raw_dir,
                     validate=True, out_dir=op.join(proj_dir, 'bids'))
