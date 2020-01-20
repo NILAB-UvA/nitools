@@ -19,7 +19,7 @@ default_args = {
     '--use-plugin': False,
     '--anat-only': False,
     '--ignore': 'slicetiming',
-    '--ignore-aroma-denoising-errors': True,
+    #'--ignore-aroma-denoising-errors': True,
     '--verbose': False,
     '--longitudinal': False,
     '--t2s-coreg': False,
@@ -140,15 +140,18 @@ def run_preproc(bids_dir, work_dir=None, out_dir=None, export_dir=None, run_sing
             ses_proc = []
             for sesd in ses_dirs:
                 this_ses = op.basename(sesd)
-                if op.isdir(op.join(fmriprep_dir, sub_base, this_ses, 'func')):
+                fmriprep_fig_dir = op.join(fmriprep_dir, sub_base, this_ses, 'figures')
+                html_file = op.join(fmriprep_dir, sub_base + '.html')
+                if op.isdir(fmriprep_fig_dir) and op.isfile(html_file):
                     ses_proc.append(True)
                 else:
                     ses_proc.append(False)
             if not all(ses_proc):  # not all sessions preprocessed yet!
                 to_process.append(sub_base)
         else:
-            fdir = op.join(fmriprep_dir, sub_base, 'func')
-            if not op.isdir(fdir):  # not processed yet!
+            fmriprep_fig_dir = op.join(fmriprep_dir, sub_base, 'figures')
+            html_file = op.join(fmriprep_dir, sub_base + '.html')
+            if not op.isdir(fmriprep_fig_dir) or not op.isfile(html_file):  # not processed yet!
                 to_process.append(sub_base)           
 
     # Define subjects which need to be preprocessed
@@ -185,6 +188,7 @@ def run_preproc(bids_dir, work_dir=None, out_dir=None, export_dir=None, run_sing
             sub_label = cmd.split('--participant_label ')[-1]
             func_dirs = glob(op.join(bids_dir, 'sub-' + sub_label, '**', 'func'), recursive=True)
             if len(func_dirs) == 0:
+                print("Setting --anat-only, because it doesn't have any functional files!")
                 cmd += ' --anat-only'  # no functional files!
             
             anat_dirs = glob(op.join(bids_dir, 'sub-' + sub_label, '**', 'anat'), recursive=True)
