@@ -142,7 +142,9 @@ def run_preproc(bids_dir, work_dir=None, out_dir=None, export_dir=None, run_sing
                 this_ses = op.basename(sesd)
                 fmriprep_fig_dir = op.join(fmriprep_dir, sub_base, this_ses, 'figures')
                 html_file = op.join(fmriprep_dir, sub_base + '.html')
+                
                 if op.isdir(fmriprep_fig_dir) and op.isfile(html_file):
+                #if op.isfile(html_file):
                     ses_proc.append(True)
                 else:
                     ses_proc.append(False)

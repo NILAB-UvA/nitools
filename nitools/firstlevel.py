@@ -7,6 +7,7 @@ from nistats.first_level_model import FirstLevelModel, make_first_level_design_m
 from nistats.contrasts import _fixed_effect_contrast, compute_contrast
 from nistats.hemodynamic_models import glover_hrf
 from nistats.design_matrix import _cosine_drift
+from nilearn import datasets
 import matplotlib.pyplot as plt
 from nilearn.plotting import view_img
 from nilearn import plotting, signal, masking, image
@@ -338,6 +339,10 @@ class Taskset:
         if not np.all(self.tr[0] == self.tr):
             self.logger.warning("Not all TRs across runsare the same ({self.tr})!")
         
+        if add_ricor and len(self.ricors) == 0:
+            self.logger.warning("No ricor file, so setting add_ricor to False.")
+            add_ricor = False
+        
         out = Parallel(n_jobs=self.n_jobs)(delayed(_run_preproc_in_parallel)(
                 run=run,
                 event=self.events[run],
@@ -543,40 +548,7 @@ class Taskset:
             return masking.unmask(values, self.mask)
         else:
             return values
-    
-    def compute_rfx_contrast(self, imgs, design_matrix, contrast_def, mask=None, noise_model='ols', stat_type='t', output_type='z_score'):
-
-        design_info = DesignInfo(design_matrix.columns.tolist())
-        if isinstance(imgs, list):
-            Y = np.stack([i.get_data() for i in imgs]).reshape(len(imgs), -1)        
-        elif isinstance(imgs, np.ndarray):
-            Y = imgs
-        else:
-            raise ValueError(f"Unknown format for Y ({type(imgs)}).")
-
-        X = design_matrix.values
-        labels, results = run_glm(Y, X, noise_model=noise_model)
-
-        if isinstance(contrast_def, (np.ndarray, str)):
-            con_vals = [contrast_def]
-        elif isinstance(contrast_def, (list, tuple)):
-            con_vals = contrast_def
-        else:
-            raise ValueError('contrast_def must be an array or str or list of'
-                             ' (array or str)')
-
-        for cidx, con in enumerate(con_vals):
-            if not isinstance(con, np.ndarray):
-                con_vals[cidx] = design_info.linear_constraint(con).coefs
-
-        contrast = compute_contrast(labels, results, con_vals, stat_type)
-
-        values = getattr(contrast, output_type)()
-        if isinstance(imgs, list):
-            values = nib.Nifti1Image(values.reshape(imgs[0].shape), affine=imgs[0].affine)
-            
-        return values
-    
+        
     def plot_design(self, exclude_confs=True):
         n_runs = len(self.glm['dms'])
         fig, ax = plt.subplots(nrows=n_runs, figsize=(15, 4 * n_runs))
@@ -784,3 +756,47 @@ def _merge_regression_results(lab, res, labels, results, n_vox):
             setattr(results[lab], attr2d, concat)
             
     return labels, results
+
+
+def compute_rfx_contrast(imgs, design_matrix, contrast_def, mask=None, noise_model='ols', stat_type='t', output_type='z_score'):
+
+    design_info = DesignInfo(design_matrix.columns.tolist())
+    if isinstance(imgs, list):
+        Y = np.stack([i.get_data() for i in imgs]).reshape(len(imgs), -1)        
+    elif isinstance(imgs, np.ndarray):
+        Y = imgs
+    else:
+        raise ValueError(f"Unknown format for Y ({type(imgs)}).")
+
+    X = design_matrix.values
+    labels, results = run_glm(Y, X, noise_model=noise_model)
+
+    if isinstance(contrast_def, (np.ndarray, str)):
+        con_vals = [contrast_def]
+    elif isinstance(contrast_def, (list, tuple)):
+        con_vals = contrast_def
+    else:
+        raise ValueError('contrast_def must be an array or str or list of'
+                         ' (array or str)')
+
+    for cidx, con in enumerate(con_vals):
+        if not isinstance(con, np.ndarray):
+            con_vals[cidx] = design_info.linear_constraint(con).coefs
+
+    contrast = compute_contrast(labels, results, con_vals, stat_type)
+
+    values = getattr(contrast, output_type)()
+    if isinstance(imgs, list):
+        values = nib.Nifti1Image(values.reshape(imgs[0].shape), affine=imgs[0].affine)
+
+    return values
+
+
+def plot_surface(data, mesh='infl', hemi='right', bg='sulc', space='fsaverage5', threshold=0):
+    fs = datasets.fetch_surf_fsaverage(mesh=space, data_dir=None)
+    return plotting.view_surf(
+        surf_mesh=getattr(fs, f'{mesh}_{hemi}'),
+        surf_map=data,
+        bg_map=getattr(fs, f'{bg}_{hemi}'),
+        threshold=threshold
+    )
